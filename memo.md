@@ -81,3 +81,52 @@ RUN wget -O - https://github.com/drone/drone-cli/releases/latest/download/drone_
 
 启动时指定zkdata目录，并且创建并写入该目录
 不指定则使用默认值
+
+
+设置一个 数据卷保存该文件
+
+写一个文件
+包含所有的: 主机名：id
+
+启动后循环读取，并写入 zoo.conf
+遍历时如果是自己，需要设置myid
+
+向zoo.conf 写入所有server数据
+server.1=nn01:2888:3888
+server.2=nn01:2888:3888
+
+docker new 
+
+docker network create -d bridge zkbr
+
+
+
+docker run --network zkbr --name zk01
+docker network create --driver bridge --subnet 172.21.0.0/16 zkbr
+
+
+docker run -d --name=zk01 -p=2181:2181 -v=/Users/liujinsuo/bigdata/00_data-docker/zookeeper/local/zoo.cfg:/zoo.cfg  -h=zk01 --network=zkbr --ip=172.21.100.101 --add-host=zk02:172.21.100.102 --add-host=zk03:172.21.100.103 zklocal
+
+docker run -d --name=zk02 -v=/Users/liujinsuo/bigdata/00_data-docker/zookeeper/local/zoo.cfg:/zoo.cfg  -h=zk02 --network=zkbr --ip=172.21.100.102 --add-host=zk01:172.21.100.101 --add-host=zk03:172.21.100.103 zklocal
+
+docker run -d --name=zk03 -v=/Users/liujinsuo/bigdata/00_data-docker/zookeeper/local/zoo.cfg:/zoo.cfg  -h=zk03 --network=zkbr --ip=172.21.100.103 --add-host=zk01:172.21.100.101 --add-host=zk02:172.21.100.102 zklocal 
+
+docker exec -it zk01 /bin/bash
+docker exec -it zk02 /bin/bash
+docker exec -it zk03 /bin/bash
+
+echo 1 > /zkdata/myid
+echo 2 > /zkdata/myid
+echo 3 > /zkdata/myid
+
+zkServer.sh start
+zkServer.sh status
+
+
+- 将下面这一部分提出
+    ```
+    /usr/sbin/sshd -D &
+
+    mkdir $HOME/.ssh
+    ssh-keygen -t rsa -N '' -f $HOME/.ssh/id_rsa
+    ```

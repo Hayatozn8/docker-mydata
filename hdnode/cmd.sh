@@ -1,8 +1,5 @@
 #!bin/bash
-/usr/sbin/sshd -D &
-
-mkdir $HOME/.ssh
-ssh-keygen -t rsa -N '' -f $HOME/.ssh/id_rsa
+echo "--------------cmd-------------------"
 
 # - 将slave的地址写入host
 # - 搜索slave开始向所有salve发送ssh密钥

@@ -9,8 +9,9 @@ ENV PATH=$PATH:$ZK_HOME/bin
 
 # creat link for config of zookeeper 
 RUN mkdir /zkdata \
-    && touch /zkdata/myid \
     && ln -s $ZK_HOME/conf/zoo.cfg /zoo.cfg
 
 VOLUME /zkdata
 VOLUME /zoo.cfg
+
+CMD [ "tail", "-f", "/dev/null" ]
