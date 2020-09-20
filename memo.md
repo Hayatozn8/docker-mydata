@@ -78,3 +78,6 @@ $SPARK_HOME/examples/jars/spark-examples_2.12-3.0.1.jar \
 ```
 
 RUN wget -O - https://github.com/drone/drone-cli/releases/latest/download/drone_linux_amd64.tar.gz | tar -C /bin/ -zxf -
+
+启动时指定zkdata目录，并且创建并写入该目录
+不指定则使用默认值

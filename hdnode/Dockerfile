@@ -14,8 +14,8 @@ RUN ln -s $HADOOP_HOME/etc/hadoop /hdetc
 
 VOLUME /hdetc
 
-ADD run.sh /run.sh
-RUN chmod a+x /run.sh
+ADD entrypoint.sh /entrypoint.sh
+RUN chmod a+x /entrypoint.sh
 
-CMD ["/run.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
 # CMD ["tail" "-f" "/dev/null"]
