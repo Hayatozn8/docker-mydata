@@ -2,7 +2,8 @@
 FROM env-ssh-jdk8 as base
 
 # install hadoop
-ENV HADOOP_VERSION 2.7.2
+# ENV HADOOP_VERSION 2.7.2
+# ENV HADOOP_VERSION 2.10.1
 ADD hadoop-$HADOOP_VERSION.tar.gz /opt/module/
 ENV HADOOP_HOME=/opt/module/hadoop-$HADOOP_VERSION
 ENV PATH=$PATH:$HADOOP_HOME/bin:$HADOOP_HOME/sbin

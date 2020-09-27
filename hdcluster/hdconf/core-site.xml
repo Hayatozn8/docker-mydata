@@ -27,7 +27,7 @@
 <!-- 指定Hadoop运行时产生文件的存储目录 -->
 <property>
 		<name>hadoop.tmp.dir</name>
-		<value>/opt/module/hadoop-2.7.2/data/tmp</value>
+		<value>/hddata/tmp</value>
 </property>
 
 </configuration>
