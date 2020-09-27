@@ -1,4 +1,5 @@
-- 创建环境镜像: [env/memo.md](env/memo.md)
+- 创建环境镜像
+    - [env/memo.md](env/memo.md)
 - 规范
     - entrypoint、cmd
         - 所有 entrypoint、cmd 用的启动文件保存在以下两个目录
@@ -18,3 +19,8 @@
         - 不需要引入的添加到 `exclude`
 - 其他问题
     - hive -mysql 的初始化有时间问题，仍然需要手动初始化
+        - schematool -dbType mysql -initSchema
+    - hive mysql 版本没有参数化
+    - nginx 的上下游ip替换
+        - 只能访问 50070，8088
+    - 
