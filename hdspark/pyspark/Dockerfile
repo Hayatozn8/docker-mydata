@@ -6,7 +6,6 @@ FROM hd-hive-spark
 # PYSPARK_DRIVER_PYTHON ipython
 # PYSPARK_DRIVER_PYTHON_OPTS notebook
 
-# password=1234
 RUN yum -y install python36 \
     && curl -O https://bootstrap.pypa.io/get-pip.py \
     && /usr/bin/python3.6 get-pip.py \
@@ -16,6 +15,12 @@ RUN yum -y install python36 \
     && echo "c.NotebookApp.ip='*'" >> /root/.jupyter/jupyter_notebook_config.py \
     && echo "c.NotebookApp.open_browser = False" >> /root/.jupyter/jupyter_notebook_config.py \
     && echo "c.NotebookApp.port =8888" >> /root/.jupyter/jupyter_notebook_config.py \
-    && echo "c.NotebookApp.token = ''" >> /root/.jupyter/jupyter_notebook_config.py
+    && echo "c.NotebookApp.token = ''" >> /root/.jupyter/jupyter_notebook_config.py \
+    && echo 'hive' >> $DOCKERENV_ENTRYPOINT/exclude
 
-# jupyter notebook --allow-root
+ENV PYSPARK_PYTHON=python3
+
+# 引入ssh 的 main.sh
+ADD entrypoint/main.sh $DOCKERENV_ENTRYPOINT/pyspark/main.sh
+RUN chmod a+x $DOCKERENV_ENTRYPOINT/pyspark/main.sh \
+    && echo 'pyspark' >> $DOCKERENV_ENTRYPOINT/include
