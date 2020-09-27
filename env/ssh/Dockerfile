@@ -9,3 +9,6 @@ RUN yum -y install which passwd openssl openssh-server openssh-clients \
 
 ADD entrypoint/main.sh $DOCKERENV_ENTRYPOINT/ssh/main.sh
 RUN chmod a+x $DOCKERENV_ENTRYPOINT/ssh/main.sh
+
+# 引入ssh 的 main.sh
+RUN echo 'ssh' >> $DOCKERENV_ENTRYPOINT/include

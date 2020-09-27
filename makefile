@@ -19,6 +19,7 @@ docker run -it --name='hd02' --add-host=hd03:172.22.101.3  --add-host=hd04:172.2
 
 - common-env
 docker run -it --name='hd02' --add-host=hd03:172.23.101.11 --net=hdcluster_hdxnet --ip=172.23.101.10 -h=hd02 common-env
+docker run -it --name='hd02' --add-host=hd03:172.23.101.11 --net=hdcluster_hdxnet --ip=172.23.101.10 -h=hd02 env-ssh
 docker rm hd02
 sh $DOCKERENV/entrypoint_default_run.sh
 

@@ -29,6 +29,4 @@ RUN chmod a+x $DOCKERENV/import.sh\
     && chmod a+x $DOCKERENV/cmd_default_run.sh
 
 # 执行默认的 entrypoint 启动文件
-ENTRYPOINT [ "sh", "$DOCKERENV/entrypoint_default_run.sh" ]
-
-# exec \"$DOCKERENV/entrypoint_default_run.sh\"
+ENTRYPOINT $DOCKERENV/entrypoint_default_run.sh
