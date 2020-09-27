@@ -1,0 +1,1 @@
+echo 'this is entrypoint/ddd/main.sh'

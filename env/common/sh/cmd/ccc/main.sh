@@ -1,0 +1,1 @@
+echo 'this is cmd/cmd/ccc/main.sh'

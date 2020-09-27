@@ -1,0 +1,3 @@
+- 通过 test.sh 启动测试
+- 在 sh 目录下，直接模拟 /dockerenv 目录
+- sh/entrypoint-null 用于测试 include 为空的情况

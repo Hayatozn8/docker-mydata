@@ -1,0 +1,1 @@
+echo 'this is ddd/main.sh'
