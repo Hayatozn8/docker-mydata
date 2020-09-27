@@ -1,5 +1,5 @@
 #!bin/bash
-echo "--------------cmd-------------------"
+echo "--------------hdnode-------------------"
 
 # - 将slave的地址写入host
 # - 搜索slave开始向所有salve发送ssh密钥
@@ -79,6 +79,3 @@ if [ "$matched" == '0' ]; then
     eval rnip='$'$rnName
     echo "$rnip  $rnName" >> /etc/hosts
 fi
-
-# keep alive
-tail -f /dev/null

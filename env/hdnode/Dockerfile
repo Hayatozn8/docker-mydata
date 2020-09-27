@@ -14,8 +14,8 @@ RUN ln -s $HADOOP_HOME/etc/hadoop /hdetc
 
 VOLUME /hdetc
 
-ADD cmd.sh /cmd.sh
-RUN chmod a+x /cmd.sh
+ADD entrypoint/main.sh $DOCKERENV_ENTRYPOINT/hdnode/main.sh
+RUN chmod a+x $DOCKERENV_ENTRYPOINT/hdnode/main.sh
 
-CMD [ "/cmd.sh" ]
-# CMD ["tail" "-f" "/dev/null"]
+# 引入 hdnode 的 main.sh
+RUN echo 'hdnode' >> $DOCKERENV_ENTRYPOINT/include
