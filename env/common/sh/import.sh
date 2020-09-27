@@ -45,6 +45,8 @@ if [ ${#excludes[@]} -ne 0 ]; then
             needs[${#needs[@]}]="$e"
         fi
     done
+else
+    needs=(${includes[@]})
 fi
 
 # 3. 检查includes中的目录是否存在，同时转换成可执行的目录
