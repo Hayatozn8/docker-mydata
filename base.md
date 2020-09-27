@@ -1,0 +1,20 @@
+- 创建环境镜像: [env/memo.md](env/memo.md)
+- 规范
+    - entrypoint、cmd
+        - 所有 entrypoint、cmd 用的启动文件保存在以下两个目录
+            - /dockerenv/entrypoint/
+            - /dockerenv/cmd/
+        - 对应的环境变量
+            - DOCKERENV = /dockerenv
+            - DOCKERENV_ENTRYPOINT = /dockerenv/entrypoint
+            - DOCKERENV_CMD = /dockerenv/cmd
+        - 所有的启动文件，以`父级目录名/镜像目录名/启动文件名` 进行保存
+            - 默认名为 main
+        - entrypoint、cmd 的默认启动文件
+            - /dockerenv/entrypoint_default_start.sh
+            - /dockerenv/cmd_default_start.sh
+        - 使用默认的 entrypoint 启动时，如果没有设置 cmd，会自动维持容器运行不会退出
+        - 需要的添加到引入的按顺序添加到 `include`
+        - 不需要引入的添加到 `exclude`
+- 其他问题
+    - hive -mysql 的初始化有时间问题，仍然需要手动初始化
