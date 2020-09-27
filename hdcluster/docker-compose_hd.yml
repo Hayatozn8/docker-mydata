@@ -86,13 +86,23 @@ services:
     image: mysql
     hostname: dn01
     ports:
-      - 3333:3306
+      - 3333: 3306
     environment:
       MYSQL_ROOT_PASSWORD: 1234
     networks:
       hdxnet: 
         ipv4_address: 172.23.101.200
-
+  
+  nginx:
+    image: hdnginx
+      - 50070: 50070 
+      - 8088: 8088 
+      - 19888: 19888 
+    ports:
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.100
+    
 networks:
   hdxnet:
     driver: bridge
