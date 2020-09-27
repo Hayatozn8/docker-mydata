@@ -1,8 +1,7 @@
 version: '3'
 services:
   nn01:
-    # image: hdnode
-    image: hdspark
+    image: hd-hive-spark
     container_name: nn01
     hostname: nn01
     # ports:
@@ -13,6 +12,7 @@ services:
     env_file:
       - hd.env
     depends_on:
+      - hive-mysql
       - dn01
       - dn02
       - dn03
@@ -81,6 +81,17 @@ services:
     networks:
       hdxnet: 
         ipv4_address: 172.23.101.5
+
+  hive-mysql:
+    image: mysql
+    hostname: dn01
+    ports:
+      - 3333:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.200
 
 networks:
   hdxnet:

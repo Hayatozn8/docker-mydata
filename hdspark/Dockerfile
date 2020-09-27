@@ -1,4 +1,4 @@
-# docker build -t hd-hive-hdspark ./hdspark
+# docker build -t hd-hive-spark ./hdspark
 FROM hd-hive-base
 
 ADD spark-3.0.1-bin-without-hadoop.tgz /opt/module/
