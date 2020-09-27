@@ -36,3 +36,17 @@
     ```sh
     sh cluster.sh down
     ```
+
+# python部分的编译与启动
+1. 需要先编译基础部分
+    ```sh
+    sh build.sh
+    ```
+2. 再编译pyspark
+    ```sh
+    sh buildpy.sh
+    ```
+3. 启动
+    ```sh
+    sh clusterpy.sh
+    ```
