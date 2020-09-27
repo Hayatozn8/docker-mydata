@@ -50,3 +50,6 @@
     ```sh
     sh clusterpy.sh
     ```
+
+# 架构图
+- ![架构图](design/structure.png)
