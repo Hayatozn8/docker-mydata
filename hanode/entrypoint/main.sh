@@ -10,7 +10,7 @@ registeredSSHUserHosts=()
 # 检查是不是 ha 环境
 # 多个 nn 返回 y
 # 一个 nn 返回 n
-function isHaNN()
+function isHaEnv()
 {
     local jnList=$NN
     jnList=(${jnList//,/ })
@@ -45,27 +45,6 @@ function tryRegisterHost()
     echo "$ip $hostname" >> /etc/hosts
 
     echo "y"
-}
-
-# 尝试将所有JN的 host 写入 /etc/hosts
-function tryRegisterHostForJN()
-{
-    local jnList=$NN
-    jnList=(${jnList//,/ })
-
-    for jnHost in ${jnList[@]}
-    do
-        eval jnip='$'$jnHost
-        tryRegisterHost $jnHost $jnip
-    done
-}
-
-# 尝试将 RM 的 host 写入 /etc/hosts
-function tryRegisterHostForRM()
-{
-    local rnHost=$RN
-    eval rnip='$'$rnHost
-    tryRegisterHost $rnip $rnHost
 }
 
 # 尝试通过 ssh 连接某个 user@host
@@ -118,15 +97,14 @@ function sshConnectSlaves()
 # ssh 连接自己
 function sshConnectSelf()
 {
-    # 获取 hostname 和 ip
-    local hostname=$1
-    eval selfIP='$'$hostname
+    # 获取当前 host 的 ip
+    eval selfIP='$'$currentHost
 
     # 尝试将 self 的地址写入host
-    tryRegisterHost $hostname $selfIP
+    tryRegisterHost $currentHost $selfIP
 
     # 尝试建立 ssh 连接
-    tryRegisterSSHUserHost $hostname "root"
+    tryRegisterSSHUserHost $currentHost "root"
 }
 
 # -----------------------------------------------
@@ -148,9 +126,10 @@ function sshConnectJN()
     done
 }
 
-# 检查结点是否为 JN
-function isJN()
+# 检查结点是否为 NN
+function isNNNode()
 {
+    # 为了兼容 nn 和 jn 的两种部署，全部通过遍历数组来判断
     local hostname=$1
     # 获取所有JN的id
     local jnList=$NN
@@ -170,28 +149,34 @@ function isJN()
 # 尝试启动 第一个mainJN节点，即NN中的第一个JN节点
 function tryStartMainJN()
 {
-    local hostname=$1
-    
     # 获取所有JN的id
     local jnList=$NN
     jnList=(${jnList//,/ })
 
     # 1. 检查 hostname 是不是mani JN 节点 (即 NN 的第一个节点)
     # 如果不是则返回
-    if [ $hostname != ${jnList[0]} ]; then
+    if [ $currentHost != ${jnList[0]} ]; then
         return 0
     fi
 
     # 2. 启动整个高可用集群
+    # 启动 JN 结点
+    for jsHost in ${jnList[@]}
+    do
+        ssh "root@${jsHost}" $HADOOP_HOME/sbin/hadoop-daemon.sh start journalnode
+    done
+    
     # 格式化 nn
     hdfs namenode -format
     # 启动当前nn结点
-    hadoop-daemon.sh start namenode
-    # 其他slaves 循环执行
-    for jnHost in ${jnList[@]}
-    do
-        # 同步元数据
-        ssh "root@$jnHost" "$HADOOP_HOME/bin/hdfs namenode -bootstrapStandby"
+    ssh "root@${currentHost}" $HADOOP_HOME/sbin/hadoop-daemon.sh start namenode
+
+    # 当前结点之外的 JN 结点拷贝元数据
+    for (( i=0; i<${#jnList[@]}; i++ )); do
+        if [ $i -ne 0 ]; then
+            # 同步元数据
+            ssh "root@${jnList[i]}" $HADOOP_HOME/bin/hdfs namenode -bootstrapStandby
+        fi
     done
 
     # 初始化 HA 在 Zookeeper 中状态
@@ -201,32 +186,38 @@ function tryStartMainJN()
     start-dfs.sh
 }
 
-#  启动 JN 结点
-function startJN()
+# 初始化 JN 结点
+function initJN()
 {
     # 与自身建立 ssh 连接
-    sshConnectSelf $hostname
+    sshConnectSelf
     # 与所有 slave 建立连接
     sshConnectSlaves
     # 与其他 JN 互联
     sshConnectJN
+}
+
+#  启动 JN 结点
+function startJN()
+{
+    # 1. 启动基本组件   
     # 注册zookeeper信息
-    registerZkId $hostname  
+    registerZkId
     # 启动 zk 集群
     zkServer.sh start
-    # 启动 JN 结点
-    hadoop-daemon.sh start journalnode
+
+    # 2. 如果是main jn，即第一个 jn，则尝试启动整个 ha 集群
+    tryStartMainJN
 }
 
 # 注册 zk 结点
 function registerZkId()
 {
-    local hostname=$1
     local jnList=$NN
     jnList=(${jnList//,/ })
 
     for (( i=0; i<${#jnList[@]}; i++ )); do
-        if [ $hostname = ${jnList[i]} ]; then
+        if [ $currentHost = ${jnList[i]} ]; then
             echo "$[$i+1]" > /zkdata/myid
             return 0
         fi
@@ -244,17 +235,25 @@ function startRM()
 
 # ------------------------------------------------
 # 只有一个 NN 结点的普通集群
-# 启动 NN
-function startNN()
+
+# 初始化 NN 结点
+function initNN()
 {
     # 与自身建立 ssh 连接
-    sshConnectSelf $hostname
+    sshConnectSelf
     # 与所有 slave 建立连接
     sshConnectSlaves
     # 尝试连接 NN2
     trySSHConnectNN2
+}
+
+# 启动 NN
+function startNN()
+{
     # 初始化 NN
     hdfs namenode -format
+    # 启动hdfs
+    start-dfs.sh
 }
 
 # ssh 连接 nn
@@ -283,46 +282,45 @@ function trySSHConnectNN2()
     fi
 }
 
-# 1. 我是谁
-hostname=$(hostname)
-matched=0
-# 2. 如果是JN
-if [ $(isJN $hostname) = 'y' ]; then
-    if [ $(isHaNN) = 'y' ]; then
+# 初始化 NN2
+function initNN2()
+{
+    # 与自身建立 ssh 连接
+    sshConnectSelf
+    # 与 NN 建立连接
+    sshConnectNN
+}
+
+# 初始化 RM
+function initRM()
+{
+    # 与自身建立 ssh 连接
+    sshConnectSelf
+    # 与所有 slave 建立连接
+    sshConnectSlaves
+}
+
+# 1. 获取当前的 hostname
+currentHost=$(hostname)
+# 2. 如果是NN
+if [ $(isNNNode $currentHost) = 'y' ]; then
+    if [ $(isHaEnv) = 'y' ]; then
         # ha 环境配置
-        # 启动JN
+        initJN
         startJN
-        # 如果是main jn，即第一个 jn，则尝试启动整个 ha 集群
-        tryStartMainJN $hostname
     else
-        # 单结点 NN 配置
+        initNN
         startNN
     fi
 fi
 
-# 3. 如果是 NN2
-if [ "$hostname" = "$NN2" ]; then
-    # 与自身建立 ssh 连接
-    sshConnectSelf $hostname
-
-    # 与 NN 建立连接
-    sshConnectNN
+# 3. 如果是 NN2，只初始化，由NN负责启动
+if [ "$currentHost" = "$NN2" ]; then
+    initNN2
 fi
 
-# 4. 如果是 RM
-if [ "$hostname" = "$RM" ]; then
-    # 与自身建立 ssh 连接
-    sshConnectSelf $hostname
-    # 与所有 slave 建立连接
-    sshConnectSlaves
-    #  启动 RM 结点
+# 4. 如果是 RM，初始化并启动
+if [ "$currentHost" = "$RM" ]; then
+    initRM
     startRM
-fi
-
-# 4. 如果是slave
-if [ "$matched" == '0' ]; then
-    # 将 JN 写入host
-    tryRegisterHostForJN
-    # 将 RM 写入host
-    tryRegisterHostForRM
 fi
