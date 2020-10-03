@@ -1,0 +1,140 @@
+version: '3'
+services:
+  nn01:
+    image: hanode
+    container_name: nn01
+    hostname: nn01
+    ports:
+    #   - 50090:50090
+      - "50071:50070"
+    volumes:
+      - ./hdconf:/hdetc
+      - ./zoo.cfg:/zoo.cfg
+    env_file:
+      - hd.env
+    depends_on:
+      - dn01
+      - dn02
+      - dn03
+      - nn02
+      - nn03
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.1
+  nn02:
+    image: hanode
+    container_name: nn02
+    hostname: nn02
+    ports:
+    #   - 50090:50090
+      - "50072:50070"
+    volumes:
+      - ./hdconf:/hdetc
+      - ./zoo.cfg:/zoo.cfg
+    env_file:
+      - hd.env
+    depends_on:
+      - dn01
+      - dn02
+      - dn03
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.2
+  nn03:
+    image: hanode
+    container_name: nn03
+    hostname: nn03
+    ports:
+    #   - 50090:50090
+      - "50073:50070"
+    volumes:
+      - ./hdconf:/hdetc
+      - ./zoo.cfg:/zoo.cfg
+    env_file:
+      - hd.env
+    depends_on:
+      - dn01
+      - dn02
+      - dn03
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.3
+
+  dn01:
+    image: hanode
+    container_name: dn01
+    hostname: dn01
+    # ports:
+    #   - 8042:8042
+    volumes:
+      - ./hdconf:/hdetc
+    env_file:
+      - hd.env
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.101
+
+  dn02:
+    image: hanode
+    container_name: dn02
+    hostname: dn02
+    # ports:
+    #   - 8042:8042
+    volumes:
+      - ./hdconf:/hdetc
+    env_file:
+      - hd.env
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.102
+
+  dn03:
+    image: hanode
+    container_name: dn03
+    hostname: dn03
+    # ports:
+    #   - 8042:8042
+    volumes:
+      - ./hdconf:/hdetc
+    env_file:
+      - hd.env
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.103
+
+  rm01:
+    image: hanode
+    container_name: rm01
+    hostname: rm01
+    volumes:
+      - ./hdconf:/hdetc
+    env_file:
+      - hd.env
+    depends_on:
+      - dn01
+      - dn02
+      - dn03
+      - nn01
+      - nn02
+      - nn03
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.20
+
+  nginx:
+    image: hdnginx
+    ports:
+      - "50070:50070"
+      - "8088:8088"
+      - "19888:19888"
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.201
+    
+networks:
+  hdxnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+        # - gateway: 172.23.0.1
