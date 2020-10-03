@@ -8,10 +8,10 @@ services:
     #   - 50090:50090
       - "50071:50070"
     volumes:
-      - ./hdconf:/hdetc
-      - ./zoo.cfg:/zoo.cfg
+      - ./haconf:/hdetc
+      - ./hazoo.cfg:/zoo.cfg
     env_file:
-      - hd.env
+      - ha.env
     depends_on:
       - dn01
       - dn02
@@ -29,10 +29,10 @@ services:
     #   - 50090:50090
       - "50072:50070"
     volumes:
-      - ./hdconf:/hdetc
-      - ./zoo.cfg:/zoo.cfg
+      - ./haconf:/hdetc
+      - ./hazoo.cfg:/zoo.cfg
     env_file:
-      - hd.env
+      - ha.env
     depends_on:
       - dn01
       - dn02
@@ -48,10 +48,10 @@ services:
     #   - 50090:50090
       - "50073:50070"
     volumes:
-      - ./hdconf:/hdetc
-      - ./zoo.cfg:/zoo.cfg
+      - ./haconf:/hdetc
+      - ./hazoo.cfg:/zoo.cfg
     env_file:
-      - hd.env
+      - ha.env
     depends_on:
       - dn01
       - dn02
@@ -67,9 +67,9 @@ services:
     # ports:
     #   - 8042:8042
     volumes:
-      - ./hdconf:/hdetc
+      - ./haconf:/hdetc
     env_file:
-      - hd.env
+      - ha.env
     networks:
       hdxnet: 
         ipv4_address: 172.23.101.101
@@ -81,9 +81,9 @@ services:
     # ports:
     #   - 8042:8042
     volumes:
-      - ./hdconf:/hdetc
+      - ./haconf:/hdetc
     env_file:
-      - hd.env
+      - ha.env
     networks:
       hdxnet: 
         ipv4_address: 172.23.101.102
@@ -95,9 +95,9 @@ services:
     # ports:
     #   - 8042:8042
     volumes:
-      - ./hdconf:/hdetc
+      - ./haconf:/hdetc
     env_file:
-      - hd.env
+      - ha.env
     networks:
       hdxnet: 
         ipv4_address: 172.23.101.103
@@ -107,9 +107,9 @@ services:
     container_name: rm01
     hostname: rm01
     volumes:
-      - ./hdconf:/hdetc
+      - ./haconf:/hdetc
     env_file:
-      - hd.env
+      - ha.env
     depends_on:
       - dn01
       - dn02

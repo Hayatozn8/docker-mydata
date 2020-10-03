@@ -12,7 +12,7 @@ services:
     env_file:
       - hd.env
     depends_on:
-      - hive-mysql
+      # - hive-mysql
       - dn01
       - dn02
       - dn03
@@ -32,7 +32,7 @@ services:
       - hd.env
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.2
+        ipv4_address: 172.23.101.101
 
   dn02:
     image: hanode
@@ -46,7 +46,7 @@ services:
       - hd.env
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.3
+        ipv4_address: 172.23.101.102
 
   dn03:
     image: hanode
@@ -60,7 +60,7 @@ services:
       - hd.env
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.4
+        ipv4_address: 172.23.101.103
 
   rm01:
     image: hanode
@@ -80,18 +80,18 @@ services:
       - nn01
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.5
+        ipv4_address: 172.23.101.20
 
-  hive-mysql:
-    image: mysql
-    hostname: dn01
-    ports:
-      - "3333:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: 1234
-    networks:
-      hdxnet: 
-        ipv4_address: 172.23.101.200
+  # hive-mysql:
+  #   image: mysql
+  #   hostname: dn01
+  #   ports:
+  #     - "3333:3306"
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: 1234
+  #   networks:
+  #     hdxnet: 
+  #       ipv4_address: 172.23.101.200
   
   nginx:
     image: hdnginx

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <!--
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,16 +18,23 @@
 
 <configuration>
 
-<!-- 指定HDFS中NameNode的地址 -->
+<!-- 指定MR运行在Yarn上 -->
 <property>
-	<name>fs.defaultFS</name>
-      <value>hdfs://nn01:9000</value>
+		<name>mapreduce.framework.name</name>
+		<value>yarn</value>
 </property>
 
-<!-- 指定Hadoop运行时产生文件的存储目录 -->
+<!-- 历史服务器端地址，hd01 是主机名 -->
 <property>
-		<name>hadoop.tmp.dir</name>
-		<value>/hddata/tmp</value>
+  <name>mapreduce.jobhistory.address</name>
+  <!-- <value>hdhs:10020</value> -->
+  <value>rm01:10020</value>
+</property>
+<!-- 历史服务器web端地址，hd01 是主机名 -->
+<property>
+    <name>mapreduce.jobhistory.webapp.address</name>
+    <!-- <value>hdhs:19888</value> -->
+    <value>rm01:19888</value>
 </property>
 
 </configuration>

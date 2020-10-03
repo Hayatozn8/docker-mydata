@@ -19,15 +19,33 @@
 <configuration>
 
 <!-- 指定HDFS中NameNode的地址 -->
-<property>
+<!-- <property>
 	<name>fs.defaultFS</name>
       <value>hdfs://nn01:9000</value>
+</property> -->
+
+<property>
+  <name>fs.defaultFS</name>
+  <!-- 指定为高可用的服务名，参考 hdfs-site.xml -->
+  <value>hdfs://mycluster</value>
 </property>
+
 
 <!-- 指定Hadoop运行时产生文件的存储目录 -->
 <property>
 		<name>hadoop.tmp.dir</name>
 		<value>/hddata/tmp</value>
+</property>
+
+<!-- JN数据的保持位置 -->
+<property>
+  <name>dfs.journalnode.edits.dir</name>
+  <value>/hddata/tmp/jn</value>
+</property>
+
+<property>
+  <name>ha.zookeeper.quorum</name>
+  <value>nn01:2181,nn02:2181,nn03:2181</value>
 </property>
 
 </configuration>

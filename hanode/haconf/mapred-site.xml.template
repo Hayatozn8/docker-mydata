@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <!--
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,17 +17,5 @@
 <!-- Put site-specific property overrides in this file. -->
 
 <configuration>
-
-<!-- 指定HDFS中NameNode的地址 -->
-<property>
-	<name>fs.defaultFS</name>
-      <value>hdfs://nn01:9000</value>
-</property>
-
-<!-- 指定Hadoop运行时产生文件的存储目录 -->
-<property>
-		<name>hadoop.tmp.dir</name>
-		<value>/hddata/tmp</value>
-</property>
 
 </configuration>
