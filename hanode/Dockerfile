@@ -8,8 +8,8 @@ ENV ZK_DATA $ZK_HOME/zkdata
 ADD zookeeper-$ZK_VERSION.tar.gz /opt/module/
 ENV PATH $PATH:$ZK_HOME/bin
 
-RUN yum -y install psmisc \
- && chmod a+x $DOCKERENV_ENTRYPOINT/hanode/main.sh \
+# RUN yum -y install psmisc \
+RUN chmod a+x $DOCKERENV_ENTRYPOINT/hanode/main.sh \
  && echo 'hanode' >> $DOCKERENV_ENTRYPOINT/include \
  && echo 'hdnode' >> $DOCKERENV_ENTRYPOINT/exclude \
  && mkdir /zkdata \

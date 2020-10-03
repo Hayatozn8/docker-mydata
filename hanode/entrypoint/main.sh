@@ -7,6 +7,21 @@ registeredHosts=()
 # 缓存已经被写入过的 ssh 用户: user@hostname
 registeredSSHUserHosts=()
 
+# 检查是不是 ha 环境
+# 多个 nn 返回 y
+# 一个 nn 返回 n
+function isHaNN()
+{
+    local jnList=$JNS
+    jnList=(${jnList//,/ })
+
+    if [ ${#jnList[@]} -eq 1 ]; then
+        echo "n"
+    else
+        echo "y"
+    fi
+}
+
 # 尝试将 hostname、ip 写入 /etc/hosts
 # $1 hostname
 # $2 ip
@@ -80,7 +95,7 @@ function tryRegisterSSHUserHost()
 }
 
 # 尝试用 ssh 连接所有的 JN
-function tryRegisterSSHUserHostForJN()
+function sshConnectJN()
 {
     local jnList=$JNS
     jnList=(${jnList//,/ })
@@ -88,6 +103,9 @@ function tryRegisterSSHUserHostForJN()
     for jnHost in ${jnList[@]}
     do
         eval jnip='$'$jnHost
+
+        tryRegisterHost $jnHost $jnip
+
         tryRegisterSSHUserHost $jnHost root
     done
 }
@@ -132,15 +150,6 @@ function sshConnectSlaves()
     done
 }
 
-function sshConnectNN()
-{
-    nnName=$NN
-    eval nnip='$'$nnName
-    echo "$nnip  $nnName" >> /etc/hosts
-    
-    sshpass -p '1234' ssh-copy-id -o StrictHostKeyChecking=no root@${nnName} > /dev/null 2>&1
-}
-
 # ssh 连接自己
 function sshConnectSelf()
 {
@@ -153,6 +162,21 @@ function sshConnectSelf()
 
     # 尝试建立 ssh 连接
     tryRegisterSSHUserHost $hostname "root"
+}
+
+function trySSHConnectNN2()
+{
+    nn2Name=$NN2
+    if [ -n $nn2Name ]; then
+        eval nn2ip='$'$nn2Name
+
+        # 尝试将 self 的地址写入host
+        tryRegisterHost $nn2Name $nn2ip
+
+        # 尝试建立 ssh 连接
+        tryRegisterSSHUserHost $nn2Name "root"
+    fi
+
 }
 
 # 尝试启动 第一个mainJN节点，即JNS中的第一个JN节点
@@ -192,10 +216,30 @@ function tryStartMainJN()
 #  启动 JN 结点
 function startJN()
 {
+    # 与自身建立 ssh 连接
+    sshConnectSelf $hostname
+    # 与所有 slave 建立连接
+    sshConnectSlaves
+    # 与其他 JN 互联
+    sshConnectJN
+    # 注册zookeeper信息
+    registerZkId $hostname  
     # 启动 zk 集群
     zkServer.sh start
     # 启动 JN 结点
     hadoop-daemon.sh start journalnode
+}
+
+function startNN()
+{
+    # 与自身建立 ssh 连接
+    sshConnectSelf $hostname
+    # 与所有 slave 建立连接
+    sshConnectSlaves
+    # 尝试连接 NN2
+    trySSHConnectNN2
+    # 初始化 NN
+    hdfs namenode -format
 }
 
 #  启动 RM 结点
@@ -207,7 +251,7 @@ function startRM()
     start-yarn.sh
 }
 
-function rgisterZkId()
+function registerZkId()
 {
     local hostname=$1
     local jnList=$JNS
@@ -226,19 +270,16 @@ hostname=$(hostname)
 matched=0
 # 2. 如果是JN
 if [ $(isJN $hostname) = 'y' ]; then
-    # 与自身建立 ssh 连接
-    sshConnectSelf $hostname
-    # 与所有 slave 建立连接
-    sshConnectSlaves
-    # 与其他 JN 互联
-    tryRegisterHostForJN
-    tryRegisterSSHUserHostForJN
-    # 注册zookeeper信息
-    rgisterZkId $hostname
-    # 启动JN
-    startJN
-    # 如果是main jn，即第一个 jn，则尝试启动所有的dn
-    tryStartMainJN $hostname
+    if [ $(isHaNN) = 'y' ]; then
+        # ha 环境配置
+        # 启动JN
+        startJN
+        # 如果是main jn，即第一个 jn，则尝试启动整个 ha 集群
+        tryStartMainJN $hostname
+    else
+        # 单结点 NN 配置
+        startNN
+    fi
 fi
 
 # 3. 如果是 RM
