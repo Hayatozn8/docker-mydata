@@ -12,7 +12,7 @@ registeredSSHUserHosts=()
 # 一个 nn 返回 n
 function isHaNN()
 {
-    local jnList=$JNS
+    local jnList=$NN
     jnList=(${jnList//,/ })
 
     if [ ${#jnList[@]} -eq 1 ]; then
@@ -50,7 +50,7 @@ function tryRegisterHost()
 # 尝试将所有JN的 host 写入 /etc/hosts
 function tryRegisterHostForJN()
 {
-    local jnList=$JNS
+    local jnList=$NN
     jnList=(${jnList//,/ })
 
     for jnHost in ${jnList[@]}
@@ -94,41 +94,6 @@ function tryRegisterSSHUserHost()
     echo "y"
 }
 
-# 尝试用 ssh 连接所有的 JN
-function sshConnectJN()
-{
-    local jnList=$JNS
-    jnList=(${jnList//,/ })
-
-    for jnHost in ${jnList[@]}
-    do
-        eval jnip='$'$jnHost
-
-        tryRegisterHost $jnHost $jnip
-
-        tryRegisterSSHUserHost $jnHost root
-    done
-}
-
-# 检查结点是否为 JN
-function isJN()
-{
-    local hostname=$1
-    # 获取所有JN的id
-    local jnList=$JNS
-    jnList=(${jnList//,/ })
-    
-    for jnNode in ${jnList[@]}
-    do
-        if [ $hostname = $jnNode ]; then
-            echo "y"
-            return 0
-        fi
-    done
-
-    echo "n"
-}
-
 # - 将 slave 的地址写入host
 # - 搜索 slave 开始向所有salve发送ssh密钥
 function sshConnectSlaves()
@@ -164,31 +129,54 @@ function sshConnectSelf()
     tryRegisterSSHUserHost $hostname "root"
 }
 
-function trySSHConnectNN2()
+# -----------------------------------------------
+# 多个 nn 结点的 ha 集群
+
+# 尝试用 ssh 连接所有的 JN
+function sshConnectJN()
 {
-    nn2Name=$NN2
-    if [ -n $nn2Name ]; then
-        eval nn2ip='$'$nn2Name
+    local jnList=$NN
+    jnList=(${jnList//,/ })
 
-        # 尝试将 self 的地址写入host
-        tryRegisterHost $nn2Name $nn2ip
+    for jnHost in ${jnList[@]}
+    do
+        eval jnip='$'$jnHost
 
-        # 尝试建立 ssh 连接
-        tryRegisterSSHUserHost $nn2Name "root"
-    fi
+        tryRegisterHost $jnHost $jnip
 
+        tryRegisterSSHUserHost $jnHost root
+    done
 }
 
-# 尝试启动 第一个mainJN节点，即JNS中的第一个JN节点
+# 检查结点是否为 JN
+function isJN()
+{
+    local hostname=$1
+    # 获取所有JN的id
+    local jnList=$NN
+    jnList=(${jnList//,/ })
+    
+    for jnNode in ${jnList[@]}
+    do
+        if [ $hostname = $jnNode ]; then
+            echo "y"
+            return 0
+        fi
+    done
+
+    echo "n"
+}
+
+# 尝试启动 第一个mainJN节点，即NN中的第一个JN节点
 function tryStartMainJN()
 {
     local hostname=$1
     
     # 获取所有JN的id
-    local jnList=$JNS
+    local jnList=$NN
     jnList=(${jnList//,/ })
 
-    # 1. 检查 hostname 是不是mani JN 节点 (即 JNS 的第一个节点)
+    # 1. 检查 hostname 是不是mani JN 节点 (即 NN 的第一个节点)
     # 如果不是则返回
     if [ $hostname != ${jnList[0]} ]; then
         return 0
@@ -230,6 +218,33 @@ function startJN()
     hadoop-daemon.sh start journalnode
 }
 
+# 注册 zk 结点
+function registerZkId()
+{
+    local hostname=$1
+    local jnList=$NN
+    jnList=(${jnList//,/ })
+
+    for (( i=0; i<${#jnList[@]}; i++ )); do
+        if [ $hostname = ${jnList[i]} ]; then
+            echo "$[$i+1]" > /zkdata/myid
+            return 0
+        fi
+    done
+}
+
+#  启动 RM 结点
+function startRM()
+{
+    # 创建日志目录
+    mkdir $HADOOP_HOME/logs
+    # 启动 yarn
+    start-yarn.sh
+}
+
+# ------------------------------------------------
+# 只有一个 NN 结点的普通集群
+# 启动 NN
 function startNN()
 {
     # 与自身建立 ssh 连接
@@ -242,27 +257,30 @@ function startNN()
     hdfs namenode -format
 }
 
-#  启动 RM 结点
-function startRM()
+# ssh 连接 nn
+function sshConnectNN()
 {
-    # 创建日志目录
-    mkdir $HADOOP_HOME/logs
-    # 启动 yarn
-    start-yarn.sh
+    nHost=$NN
+    eval nnip='$'$nHost
+    # 尝试将 self 的地址写入host
+    tryRegisterHost $nHost $nnip
+
+    # 尝试建立 ssh 连接
+    tryRegisterSSHUserHost $nHost "root"
 }
 
-function registerZkId()
+function trySSHConnectNN2()
 {
-    local hostname=$1
-    local jnList=$JNS
-    jnList=(${jnList//,/ })
+    nn2Host=$NN2
+    if [ -n $nn2Host ]; then
+        eval nn2ip='$'$nn2Host
 
-    for (( i=0; i<${#jnList[@]}; i++ )); do
-        if [ $hostname = ${jnList[i]} ]; then
-            echo "$[$i+1]" > /zkdata/myid
-            return 0
-        fi
-    done
+        # 尝试将 self 的地址写入host
+        tryRegisterHost $nn2Host $nn2ip
+
+        # 尝试建立 ssh 连接
+        tryRegisterSSHUserHost $nn2Host "root"
+    fi
 }
 
 # 1. 我是谁
@@ -282,7 +300,16 @@ if [ $(isJN $hostname) = 'y' ]; then
     fi
 fi
 
-# 3. 如果是 RM
+# 3. 如果是 NN2
+if [ "$hostname" = "$NN2" ]; then
+    # 与自身建立 ssh 连接
+    sshConnectSelf $hostname
+
+    # 与 NN 建立连接
+    sshConnectNN
+fi
+
+# 4. 如果是 RM
 if [ "$hostname" = "$RM" ]; then
     # 与自身建立 ssh 连接
     sshConnectSelf $hostname
