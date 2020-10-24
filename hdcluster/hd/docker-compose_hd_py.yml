@@ -1,18 +1,19 @@
 version: '3'
 services:
   nn01:
-    image: hanode
+    image: hd-hive-pyspark
     container_name: nn01
     hostname: nn01
-    # ports:
-    #   - 50090:50090
+    ports:
+      - "8888:8888"
+      - "9000:9000"
     #   - 50070:50070
     volumes:
-      - ./hdconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - hd.env
     depends_on:
-      # - hive-mysql
+      - hive-mysql
       - dn01
       - dn02
       - dn03
@@ -21,56 +22,56 @@ services:
         ipv4_address: 172.23.101.1
 
   dn01:
-    image: hanode
+    image: hdnode
     container_name: dn01
     hostname: dn01
     # ports:
     #   - 8042:8042
     volumes:
-      - ./hdconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - hd.env
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.101
+        ipv4_address: 172.23.101.2
 
   dn02:
-    image: hanode
+    image: hdnode
     container_name: dn02
     hostname: dn02
     # ports:
     #   - 8042:8042
     volumes:
-      - ./hdconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - hd.env
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.102
+        ipv4_address: 172.23.101.3
 
   dn03:
-    image: hanode
+    image: hdnode
     container_name: dn03
     hostname: dn03
     # ports:
     #   - 8042:8042
     volumes:
-      - ./hdconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - hd.env
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.103
+        ipv4_address: 172.23.101.4
 
   rm01:
-    image: hanode
+    image: hdnode
     container_name: rm01
     hostname: rm01
     # ports:
     #   - 8088:8088
     #   - 19888:19888
     volumes:
-      - ./hdconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - hd.env
     depends_on:
@@ -80,18 +81,18 @@ services:
       - nn01
     networks:
       hdxnet: 
-        ipv4_address: 172.23.101.20
+        ipv4_address: 172.23.101.5
 
-  # hive-mysql:
-  #   image: mysql
-  #   hostname: dn01
-  #   ports:
-  #     - "3333:3306"
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: 1234
-  #   networks:
-  #     hdxnet: 
-  #       ipv4_address: 172.23.101.200
+  hive-mysql:
+    image: mysql
+    hostname: dn01
+    ports:
+      - "3333:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    networks:
+      hdxnet: 
+        ipv4_address: 172.23.101.200
   
   nginx:
     image: hdnginx

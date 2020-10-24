@@ -8,7 +8,7 @@ services:
     #   - 50090:50090
       - "50071:50070"
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
       - ./hazoo.cfg:/zoo.cfg
     env_file:
       - ha.env
@@ -29,7 +29,7 @@ services:
     #   - 50090:50090
       - "50072:50070"
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
       - ./hazoo.cfg:/zoo.cfg
     env_file:
       - ha.env
@@ -48,7 +48,7 @@ services:
     #   - 50090:50090
       - "50073:50070"
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
       - ./hazoo.cfg:/zoo.cfg
     env_file:
       - ha.env
@@ -67,7 +67,7 @@ services:
     # ports:
     #   - 8042:8042
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - ha.env
     networks:
@@ -81,7 +81,7 @@ services:
     # ports:
     #   - 8042:8042
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - ha.env
     networks:
@@ -95,7 +95,7 @@ services:
     # ports:
     #   - 8042:8042
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - ha.env
     networks:
@@ -107,7 +107,7 @@ services:
     container_name: rm01
     hostname: rm01
     volumes:
-      - ./haconf:/hdetc
+      - ./conf:/hdetc
     env_file:
       - ha.env
     depends_on:

@@ -1,5 +1,5 @@
 # docker build -t hd-hive-base ./hive/base
-FROM hdnode:latest
+FROM hanode:latest
 
 # 配置 hive
 ARG HIVE_VERSION=2.3.7
