@@ -53,24 +53,21 @@ function tryRegisterHost()
 # @return y=成功连接; n=已经连接过了，不需要再连接一次
 function tryRegisterSSHUserHost()
 {
-    local hostname=$1
-    local user=$2
-    local sshTarget="$user@$hostname"
-
-    for rsuh in ${registeredSSHUserHosts[@]}
-    do
-        #  如果当前 user@host 已经连接过，则不需要再连接一次，跳过当前处理
-        if [ $sshTarget = $rsuh ]; then
-            echo "n"
-            return 0
-        fi
-    done
-
-    # 如果从未连接过 user@host，则尝试连接
-    registeredSSHUserHosts[${#registeredSSHUserHosts[@]}]="$sshTarget"
-    sshpass -p '1234' ssh-copy-id -o StrictHostKeyChecking=no $sshTarget > /dev/null 2>&1
+    tryCreateSSHConnect "$2@$1"
 
     echo "y"
+}
+
+function tryCreateSSHConnect()
+{
+    # $1 = username@ip or username@hostname
+    
+    # 尝试进行 ssh 连接，并且失败时不重试
+    ssh -o NumberOfPasswordPrompts=0 $1 "pwd"
+    # 如果无法通过 ssh 进行连接，则创建连接
+    if [ $? != 0 ]; then
+        createSSHConnect.sh $1
+    fi
 }
 
 # - 将 slave 的地址写入host
@@ -80,7 +77,7 @@ function sshConnectSlaves()
     # 获取所有 slaves 的 id
     local slaves=$SLAVES
     slaves=(${slaves//,/ })
-    
+
     for slaveHostName in ${slaves[@]}
     do
         # 将slave的地址写入host
@@ -134,7 +131,7 @@ function isNNNode()
     # 获取所有JN的id
     local jnList=$NN
     jnList=(${jnList//,/ })
-    
+
     for jnNode in ${jnList[@]}
     do
         if [ $hostname = $jnNode ]; then
@@ -165,7 +162,7 @@ function tryStartMainJN()
     do
         ssh "root@${jsHost}" $HADOOP_HOME/sbin/hadoop-daemon.sh start journalnode
     done
-    
+
     # 格式化 nn
     hdfs namenode -format
     # 启动当前nn结点
@@ -182,7 +179,7 @@ function tryStartMainJN()
     # 初始化 HA 在 Zookeeper 中状态
     hdfs zkfc -formatZK
 
-    # 群起    
+    # 群起
     start-dfs.sh
 }
 
@@ -200,28 +197,9 @@ function initJN()
 #  启动 JN 结点
 function startJN()
 {
-    # 1. 启动基本组件   
-    # 注册zookeeper信息
-    registerZkId
-    # 启动 zk 集群
-    zkServer.sh start
-
+    # 1. 需要设置 ZOO_MY_ID，zk集群将会自动启动
     # 2. 如果是main jn，即第一个 jn，则尝试启动整个 ha 集群
     tryStartMainJN
-}
-
-# 注册 zk 结点
-function registerZkId()
-{
-    local jnList=$NN
-    jnList=(${jnList//,/ })
-
-    for (( i=0; i<${#jnList[@]}; i++ )); do
-        if [ $currentHost = ${jnList[i]} ]; then
-            echo "$[$i+1]" > /zkdata/myid
-            return 0
-        fi
-    done
 }
 
 #  启动 RM 结点
@@ -300,6 +278,7 @@ function initRM()
     sshConnectSlaves
 }
 
+# ----------------- main() ------------------
 # 1. 获取当前的 hostname
 currentHost=$(hostname)
 # 2. 如果是NN
