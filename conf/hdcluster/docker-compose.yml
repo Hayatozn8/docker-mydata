@@ -1,7 +1,8 @@
 version: '3'
 services:
   nn01:
-    image: hd-hive-spark
+    # image: hd-hive-spark
+    image: hanode
     container_name: nn01
     hostname: nn01
     # ports:

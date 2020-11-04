@@ -1,9 +1,6 @@
 #!bin/bash
 echo "--------------hanode-------------------"
 
-# 缓存已经被写入过的 hosts
-registeredHosts=()
-
 # 缓存已经被写入过的 ssh 用户: user@hostname
 registeredSSHUserHosts=()
 
@@ -22,56 +19,33 @@ function isHaEnv()
     fi
 }
 
-# 尝试将 hostname、ip 写入 /etc/hosts
-# $1 hostname
-# $2 ip
-# @return y=成功写入; n=已经写过了，不需要再写一次
+# 尝试将 ip、hostname 写入 /etc/hosts
+# $1 ip
+# $2 hostname
 function tryRegisterHost()
 {
-    local hostname=$1
-    local ip=$2
-
-    for rh in ${registeredHosts[@]}
-    do
-        #  如果当前 host 已经被写入过 /etc/hosts，则跳过当前处理
-        if [ $hostname = $rh ]; then
-            echo "n"
-            return 0
-        fi
-    done
-
     # 如果从未写入过 /etc/hosts，则写入
-    registeredHosts[${#registeredHosts[@]}]="$hostname"
-    echo "$ip $hostname" >> /etc/hosts
-
-    echo "y"
-}
-
-# 尝试通过 ssh 连接某个 user@host
-# $1 hostname
-# $2 user
-# @return y=成功连接; n=已经连接过了，不需要再连接一次
-function tryRegisterSSHUserHost()
-{
-    tryCreateSSHConnect "$2@$1"
-
-    echo "y"
-}
-
-function tryCreateSSHConnect()
-{
-    # $1 = username@ip or username@hostname
-    
-    # 尝试进行 ssh 连接，并且失败时不重试
-    ssh -o NumberOfPasswordPrompts=0 $1 "pwd"
-    # 如果无法通过 ssh 进行连接，则创建连接
-    if [ $? != 0 ]; then
-        createSSHConnect.sh $1
+    if [ -z  $(grep -E "$1\s+$2$" /etc/hosts) ]; then
+        echo "$1 $2" >> /etc/hosts
     fi
 }
 
-# - 将 slave 的地址写入host
-# - 搜索 slave 开始向所有salve发送ssh密钥
+# 尝试创建与某个 IP/hostname 下的 user 的 ssh 连接
+# $1 user
+# $2 IP/hostname
+function tryCreateSSHConnect()
+{
+    sshTarget="$1@$2"
+    # 尝试进行 ssh 连接，并且失败时不重试
+    ssh -o NumberOfPasswordPrompts=0 $sshTarget "pwd"
+    # 如果无法通过 ssh 进行连接，则创建连接
+    if [ $? != 0 ]; then
+        createSSHConnect.sh $sshTarget
+    fi
+}
+
+# 将 slave 的地址写入host
+# 搜索 slave 开始向所有salve发送ssh密钥
 function sshConnectSlaves()
 {
     # 获取所有 slaves 的 id
@@ -80,14 +54,14 @@ function sshConnectSlaves()
 
     for slaveHostName in ${slaves[@]}
     do
-        # 将slave的地址写入host
+        # 通过HostName从环境变量中获取对应的IP
         eval slaveIP='$'$slaveHostName
 
         # 尝试将 slave 的地址写入host
-        tryRegisterHost $slaveHostName $slaveIP
+        tryRegisterHost $slaveIP $slaveHostName
 
         # 尝试建立 ssh 连接
-        tryRegisterSSHUserHost $slaveHostName "root"
+        tryCreateSSHConnect "root" $slaveHostName
     done
 }
 
@@ -98,10 +72,10 @@ function sshConnectSelf()
     eval selfIP='$'$currentHost
 
     # 尝试将 self 的地址写入host
-    tryRegisterHost $currentHost $selfIP
+    tryRegisterHost $selfIP $currentHost
 
     # 尝试建立 ssh 连接
-    tryRegisterSSHUserHost $currentHost "root"
+    tryCreateSSHConnect "root" $currentHost
 }
 
 # -----------------------------------------------
@@ -115,11 +89,12 @@ function sshConnectJN()
 
     for jnHost in ${jnList[@]}
     do
+        # 通过HostName从环境变量中获取对应的IP
         eval jnip='$'$jnHost
 
-        tryRegisterHost $jnHost $jnip
+        tryRegisterHost $jnip $jnHost
 
-        tryRegisterSSHUserHost $jnHost root
+        tryCreateSSHConnect "root" $jnHost
     done
 }
 
@@ -240,7 +215,7 @@ function sshConnectNN()
     nHost=$NN
     eval nnip='$'$nHost
     # 尝试将 self 的地址写入host
-    tryRegisterHost $nHost $nnip
+    tryRegisterHost $nnip $nHost
 
     # 尝试建立 ssh 连接
     tryRegisterSSHUserHost $nHost "root"
@@ -253,7 +228,7 @@ function trySSHConnectNN2()
         eval nn2ip='$'$nn2Host
 
         # 尝试将 self 的地址写入host
-        tryRegisterHost $nn2Host $nn2ip
+        tryRegisterHost $nn2ip $nn2Host
 
         # 尝试建立 ssh 连接
         tryRegisterSSHUserHost $nn2Host "root"
