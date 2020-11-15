@@ -1,29 +1,21 @@
-#!bin/bash
+#!/bin/bash
 echo "--------------zknode-------------------"
 
-# 如果未设置 $ZOO_MY_ID ，则不启动过结点并退出处理
-if [ -z $ZOO_MY_ID ]; then
-    exit 0
+# 如果未设置 $ZOO_MY_ID ，则按照单结点进行处理
+if [ -n $ZOO_MY_ID ]; then
+    echo "$ZOO_MY_ID" > /zkdata/myid
 fi
 
-echo "$ZOO_MY_ID" > /zkdata/myid
+# 尝试将配置写入/zkconfig
+env2conf.sh ZOO $ZOOKEEPER_HOME/conf/zoo.cfg "" "" "my.id"
+env2conf.sh ZOOLOG $ZOOKEEPER_HOME/conf/log4j.properties
 
-if [ -n "$ZOO_SERVERS" ]; then
-    # 如果能获取到 $ZOO_SERVERS，则替换配置文件中的服务配置
-    sed -i "s@server\..*=.*:.*:.*@@g" $ZOOKEEPER_HOME/conf/zoo.cfg
-
-    serverInfoList=( $ZOO_SERVERS )
-    for serverInfo in ${serverInfoList[@]}; do
-        echo $serverInfo >> $ZOOKEEPER_HOME/conf/zoo.cfg
-    done
-else
-    # 如果不能获取到 $ZOO_SERVERS，则从配置文件中抽取servers信息
-    serverInfoList=( $( grep "server" myzoo.cfg ) )
-fi
+# 与集群中的其他结点做ssh连接
+serverInfoList=( $( grep -e "^server\..*" $ZOOKEEPER_HOME/conf/zoo.cfg ) )
 
 for serverInfo in ${serverInfoList[@]}; do
     # get serverName
-    serverName=$(echo $serverInfo|sed -nr 's@server.*=(.*):.*:.*@\1@p')
+    serverName=$(echo $serverInfo|sed -r 's@server.*=(.*):.*:.*@\1@')
 
     # check serverName in /etc/hosts (docker network--> skip)
 

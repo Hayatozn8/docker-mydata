@@ -1,4 +1,3 @@
-# docker build -t env-ssh-jdk8 ./env/jdk8/
 FROM env-ssh
 
 ADD jdk-8u144-linux-x64.tar.gz /opt/module/

@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 # 测试环境变量
 export DOCKERENV=$(pwd)

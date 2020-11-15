@@ -1,5 +1,4 @@
-# docker build -t zknode ./zknode
-FROM env-ssh-jdk8
+FROM env-jdk8
 
 ADD entrypoint/main.sh $DOCKERENV_ENTRYPOINT/zknode/main.sh
 ENV ZOOKEEPER_VERSION 3.4.14

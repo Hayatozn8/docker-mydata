@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 echo "--------------hd-hive-base-------------------"
 
 # 0. 必须先启动mysql

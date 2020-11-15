@@ -1,0 +1,65 @@
+version: '3'
+services:
+  ka01:
+    image: kafka-base
+    container_name: ka01
+    hostname: ka01
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVER_1: ka01:2888:3888
+      ZOO_SERVER_2: ka02:2888:3888
+      ZOO_SERVER_3: ka03:2888:3888
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.1
+  ka02:
+    image: kafka-base
+    container_name: ka02
+    hostname: ka02
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVER_1: ka01:2888:3888
+      ZOO_SERVER_2: ka02:2888:3888
+      ZOO_SERVER_3: ka03:2888:3888
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LISTENERS: "PLAINTEXT://ka02:9093"
+      KAFKA_LOG_DIRS: "/opt/module/kafka/data"
+      KAFKA_ZOOKEEPER_CONNECT: "ka01:2181,ka02:2181,ka03:2181"
+    ports:
+      - "2182:2181"
+      - "9093:9093"
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.2
+  ka03:
+    image: kafka-base
+    container_name: ka03
+    hostname: ka03
+    ports:
+      - "9094:9094"
+      - "2183:2181"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVER_1: ka01:2888:3888
+      ZOO_SERVER_2: ka02:2888:3888
+      ZOO_SERVER_3: ka03:2888:3888
+      KAFKA_BROKER_ID: 3
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LISTENERS: "PLAINTEXT://ka03:9094"
+      KAFKA_LOG_DIRS: "/opt/module/kafka/data"
+      KAFKA_ZOOKEEPER_CONNECT: "ka01:2181,ka02:2181,ka03:2181"
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.3
+
+networks:
+  datanet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+        # - gateway: 172.24.0.1

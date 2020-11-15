@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 echo "--------------hanode-------------------"
 
 # 缓存已经被写入过的 ssh 用户: user@hostname

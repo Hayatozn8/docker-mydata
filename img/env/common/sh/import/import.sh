@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 #### 调用方法 ####
 # sh import.sh entrypoint

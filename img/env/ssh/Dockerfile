@@ -1,5 +1,4 @@
-# docker build -t env-ssh ./env/ssh
-FROM common-env
+FROM env-common
 
 # ssh
 # ssh copy: epel-release、sshpass

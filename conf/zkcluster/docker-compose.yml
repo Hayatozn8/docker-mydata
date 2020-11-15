@@ -1,41 +1,50 @@
 version: '3'
 services:
   zk01:
-    image: zknode
+    image: env-zknode
     container_name: zk01
     hostname: zk01
+    ports:
+      - "2181:2181"
     environment:
       ZOO_MY_ID: 1
-    volumes:
-      - ./conf:/zkconfig
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
     networks:
-      zknet: 
-        ipv4_address: 172.24.101.1
+      datanet: 
+        ipv4_address: 172.24.102.1
   zk02:
-    image: zknode
+    image: env-zknode
     container_name: zk02
     hostname: zk02
     environment:
       ZOO_MY_ID: 2
-    volumes:
-      - ./conf:/zkconfig
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
+    ports:
+      - "2182:2181"
     networks:
-      zknet: 
-        ipv4_address: 172.24.101.2
+      datanet: 
+        ipv4_address: 172.24.102.2
   zk03:
-    image: zknode
+    image: env-zknode
     container_name: zk03
     hostname: zk03
+    ports:
+      - "2183:2181"
     environment:
       ZOO_MY_ID: 3
-    volumes:
-      - ./conf:/zkconfig
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
     networks:
-      zknet: 
-        ipv4_address: 172.24.101.3
+      datanet: 
+        ipv4_address: 172.24.102.3
 
 networks:
-  zknet:
+  datanet:
     driver: bridge
     ipam:
       config:

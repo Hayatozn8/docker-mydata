@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 echo "--------------ssh-------------------"
 mkdir /var/run/sshd/

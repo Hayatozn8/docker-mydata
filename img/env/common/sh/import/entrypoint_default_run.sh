@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 sh $DOCKERENV/import.sh entrypoint
 

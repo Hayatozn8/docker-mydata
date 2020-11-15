@@ -1,5 +1,4 @@
-# docker build -t hanode ./hanode
-FROM zknode
+FROM env-zknode
 
 # install hadoop
 # ENV HADOOP_VERSION 2.7.2
