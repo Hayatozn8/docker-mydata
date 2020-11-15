@@ -13,7 +13,7 @@ services:
       ZOO_SERVER_3: zk03:2888:3888
     networks:
       datanet: 
-        ipv4_address: 172.24.102.1
+        ipv4_address: 172.24.101.1
   zk02:
     image: env-zknode
     container_name: zk02
@@ -27,7 +27,7 @@ services:
       - "2182:2181"
     networks:
       datanet: 
-        ipv4_address: 172.24.102.2
+        ipv4_address: 172.24.101.2
   zk03:
     image: env-zknode
     container_name: zk03
@@ -41,7 +41,7 @@ services:
       ZOO_SERVER_3: zk03:2888:3888
     networks:
       datanet: 
-        ipv4_address: 172.24.102.3
+        ipv4_address: 172.24.101.3
 
 networks:
   datanet:
