@@ -1,4 +1,4 @@
-FROM env-zknode
+FROM env-jdk8
 
 # 添加 kafak 安装包
 ADD kafka_2.11-0.11.0.0.tgz /opt/module/

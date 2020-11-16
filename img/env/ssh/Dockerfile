@@ -1,4 +1,4 @@
-FROM env-common
+FROM env-jdk8
 
 # ssh
 # ssh copy: epel-release、sshpass

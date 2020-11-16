@@ -1,4 +1,4 @@
-FROM env-ssh
+FROM env-common
 
 ADD jdk-8u144-linux-x64.tar.gz /opt/module/
 ENV JAVA_HOME /opt/module/jdk1.8.0_144

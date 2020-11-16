@@ -1,4 +1,4 @@
-FROM env-jdk8
+FROM env-ssh
 
 ADD entrypoint/main.sh $DOCKERENV_ENTRYPOINT/zknode/main.sh
 ENV ZOOKEEPER_VERSION 3.4.14
