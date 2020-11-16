@@ -67,30 +67,29 @@ function isInclude(){
 
 
 # 获取环境变量中以 $envStartStr 参数开头的所有变量
-envs=($(env | grep -E "^${envStartStr}_.*${kvDelimiter}"))
+envNameList=($(env | grep -E "^${envStartStr}_.*${kvDelimiter}" | cut -d "=" -f 1))
 
 # 向指定的配置文件中写入一个换行
 # 防止配置文件不是以换行结尾时，导致的配置写入异常
-if [ ${#envs[@]} != 0 ];then
+if [ ${#envNameList[@]} != 0 ];then
     echo -e "\n" >> $confFilePath
 fi
 
 # 迭代环境变量，并写入 $confFilePath 指定的配置文件
-for envStr in ${envs[@]}; do
-    # KAFKA_LOG_DIRS=/opt ---> LOG_DIRS=/opt
-    confStr=$(echo $envStr | sed -E "s/^${envStartStr}_(.*)/\1/")
-    # LOG_DIRS=/opt ---> log.dirs
-    confKey=$(echo $confStr | sed -E "s/^(.*)=.*/\1/" | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
-
+for envName in ${envNameList[@]}; do
+    # KAFKA_LOG_DIRS=/opt ---> LOG_DIRS ---> log_dirs ---> log.dirs
+    # confKey=$(echo $envName | sed -E "s/^${envStartStr}_(.*)/\1/") | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
+    confKey=$(echo $envName | sed "s/${envStartStr}_//" | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
     # 检查是否需要将当前key写入配置
     if [ $(isInclude $confKey) = 'n' ]; then
         continue
     fi
 
     # log_dirs=/opt ---> /opt
-    confValue=$(echo $confStr | sed -E "s/^.*=(.*)/\1/")
+    eval confValue='$'$envName
 
-    if [ -z $( grep -E "^$confKey$kvDelimiter.*" $confFilePath ) ];then
+    rowNo=$(grep -ne "^${confKey}${tmpKVDelimiter}.*$" $confFilePath | head -n 1| cut -d ':' -f 1)
+    if [ -z $rowNo ];then
         # 如果某个属性不存在，则直接添加
         echo "$confKey$kvDelimiter$confValue" >> $confFilePath
     else
@@ -98,6 +97,6 @@ for envStr in ${envs[@]}; do
         # 转译 / 为 \/，防止 sed 异常
         confValue=${confValue//\//\\/}
         tmpKVDelimiter=${kvDelimiter//\//\\/}
-        sed -i "s/^${confKey}${tmpKVDelimiter}.*/${confKey}${tmpKVDelimiter}${confValue}/" $confFilePath
+        sed -i "$rowNo""c ${confKey}${tmpKVDelimiter}${confValue}" $confFilePath
     fi
 done
