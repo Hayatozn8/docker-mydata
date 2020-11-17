@@ -7,8 +7,8 @@ if [ -n $ZOO_MY_ID ]; then
 fi
 
 # 尝试将配置写入/zkconfig
-env2conf.sh ZOO $ZOOKEEPER_HOME/conf/zoo.cfg "" "" "my.id"
-env2conf.sh ZOOLOG $ZOOKEEPER_HOME/conf/log4j.properties
+env2conf.sh -e ZOO -c $ZOOKEEPER_HOME/conf/zoo.cfg -x "my.id"
+env2conf.sh -e ZOOLOG -c $ZOOKEEPER_HOME/conf/log4j.properties
 
 # 与集群中的其他结点做ssh连接
 serverInfoList=( $( grep -e "^server\..*" $ZOOKEEPER_HOME/conf/zoo.cfg ) )

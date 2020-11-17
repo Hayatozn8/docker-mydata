@@ -2,7 +2,7 @@
 echo "--------------kafka-eagle-webui-------------------"
 
 # 将 KE 开头的环境变量转换为配置并写入文件
-env2conf.sh KE $KE_HOME/conf/system-config.properties "" "" "home" 
+env2conf.sh -e KE -c $KE_HOME/conf/system-config.properties -x "home" 
 
 # 启动webui服务
 # ke.sh start
