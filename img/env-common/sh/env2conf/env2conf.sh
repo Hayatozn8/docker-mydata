@@ -11,18 +11,31 @@
 
 function usage()
 {
-    cat << USAGE >&2
+    cat << USAGE >&1
 Usage:
-    env2conf.sh -e evnStartkey -c confPath [options]
-    -e evnStartKey| --evnStart=evnStartKey  evn startkey
+    env2conf.sh -e envPrefix -c confPath [options]
+    -e envPrefix  | --envPrefix=envPrefix   evn startkey
     -c confPath   | --conf=confPath         config path
 
 Options:
     -i include    | --include=include       [list] only use the element of include list
     -x exclude    | --exclude=exclude       [list] will not write to config
-    -t [txt,xml]  | --type=[txt,xml]        type of conf, default type is `txt`
-    -d delimiter  | --delimiter=delimiter   delimiter of confkey confValue, default type is `=`
-
+    -t [txt,xml]  | --type=[txt,xml]        type of conf, default type is [txt]
+    -d delimiter  | --delimiter=delimiter   delimiter of confkey confValue, default type is [=]
+                  | --xmlTemplate=...       when -t/--type is xml, must set xmlTemplate !!!
+                                            example:
+                                                <property><name>@key@</name><value>@value@</value></property>
+                                            @key@, @value@ will be repalced by env
+                  | --xmlAppendTo=...       when -t/--type is xml, must set xmlAppendTo !!!
+                                            example:
+                                                configuration
+                                            after replaced key and value of xmlTemplate,
+                                            will append the replaced string to config before the tag
+                                            set with xmlAppendTo
+                                            append example:
+                                                <configuration>
+                                                    <property><name>xxx</name><value>yyy</value></property>
+                                                </configuration>
 USAGE
 }
 
@@ -46,7 +59,7 @@ function isInclude(){
             fi
         done
         echo "n"
-        return 
+        return
     fi
 
     # 检查是否需要排除
@@ -62,9 +75,10 @@ function isInclude(){
     echo 'y'
 }
 
-function writeTxtConf(){
-    # 获取环境变量中以 $evnStart 参数开头的所有变量
-    envNameList=($(env | grep -E "^${evnStart}_.*${kvDelimiter}" | cut -d "=" -f 1))
+
+function envToConf(){
+    # 获取环境变量中以 $envPrefix 参数开头的所有变量
+    envNameList=($(env | grep -E "^${envPrefix}_.*${kvDelimiter}" | cut -d "=" -f 1))
 
     # 向指定的配置文件中写入一个换行
     # 防止配置文件不是以换行结尾时，导致的配置写入异常
@@ -75,55 +89,80 @@ function writeTxtConf(){
     # 迭代环境变量，并写入 $confPath 指定的配置文件
     for envName in ${envNameList[@]}; do
         # KAFKA_LOG_DIRS=/opt ---> LOG_DIRS ---> log_dirs ---> log.dirs
-        # confKey=$(echo $envName | sed -E "s/^${evnStart}_(.*)/\1/") | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
-        confKey=$(echo $envName | sed "s/${evnStart}_//" | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
+        confKey=$(echo ${envName#$envPrefix\_} | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
+
         # 检查是否需要将当前key写入配置
         if [ $(isInclude $confKey) = 'n' ]; then
             continue
         fi
 
         # log_dirs=/opt ---> /opt
-        eval confValue='$'$envName
+        confValue=${!envName}
 
-        rowNo=$(grep -ne "^${confKey}${tmpKVDelimiter}.*$" $confPath | head -n 1| cut -d ':' -f 1)
-        if [ -z $rowNo ];then
-            # 如果某个属性不存在，则直接添加
-            echo "$confKey$kvDelimiter$confValue" >> $confPath
-        else
-            # 如果某个属性已经存在，则直接覆盖
-            # 转译 / 为 \/，防止 sed 异常
-            confValue=${confValue//\//\\/}
-            tmpKVDelimiter=${kvDelimiter//\//\\/}
-            sed -i "$rowNo""c ${confKey}${tmpKVDelimiter}${confValue}" $confPath
-        fi
+        # env to conf
+        eval "${type}PropertyWrite" '"$confKey"' '"$confValue"'
     done
 }
 
+# write evn to txt_config
+# @param $1 key
+# @param $2 value
+function txtPropertyWrite(){
+    tmpKVDelimiter=${kvDelimiter//\//\\/}
+    # 检索行号，只取第一个
+    rowNo=$(grep -ne "^$1${tmpKVDelimiter}.*$" $confPath | head -n 1 | cut -d ':' -f 1)
 
+    if [ -z $rowNo ];then
+        # 如果某个属性不存在，则直接添加
+        echo "$1$kvDelimiter$2" >> $confPath
+    else
+        # 如果某个属性已经存在，则直接覆盖
+        # 转译 / 为 \/，防止 sed 异常
+        confValue=${2//\//\\\/}
+        sed -i "$rowNo""c $1${tmpKVDelimiter}${confValue}" $confPath
+    fi
+}
+
+# write evn to xml_config
+# @param $1 key
+# @param $2 value
+function xmlPropertyWrite(){
+    local key=$1
+    local value=${2//\//\\\/}
+    value=${value//&/\\&}
+
+    local entry=$( echo "$xmlTemplate" | sed "s/@key@/${key}/" | sed "s/@value@/${value}/" )
+    entry=${entry//\//\\/}
+    entry=${entry//&/\\&}
+
+    sed -i "/<\/${xmlAppendTo}>/ s/.*/${entry}\n&/" $confPath
+}
 ###################### main ######################
-# extract parameters
+# 1. extract parameters
 type=""
-evnStart=""
+envPrefix=""
 confPath=""
 include=()
 exclude=()
 kvDelimiter=""
+xmlTemplate=""
+xmlAppendTo=""
 while [ $# -gt 0 ]
 do
     case "$1" in
-        # --evnStart -e
+        # --envPrefix -e
         -e)
-            evnStart="$2"
-            if [ -z $evnStart ]; then
+            envPrefix="$2"
+            if [ -z $envPrefix ]; then
                 echoerr "env2vonf.sh error: -e is empty"
                 exit 1
             fi
             consumeParamCount=2
         ;;
-        --evnStart=*)
-            evnStart="${1#*=}"
-            if [ -z $evnStart ]; then
-                echoerr "env2vonf.sh error: --evnStart is empty"
+        --envPrefix=*)
+            envPrefix="${1#*=}"
+            if [ -z $envPrefix ]; then
+                echoerr "env2vonf.sh error: --envPrefix is empty"
                 exit 1
             fi
             consumeParamCount=1
@@ -139,7 +178,7 @@ do
         ;;
         --conf=*)
             confPath="${1#*=}"
-            if [ -z $evnStart ]; then
+            if [ -z $envPrefix ]; then
                 echoerr "env2vonf.sh error: --conf is empty"
                 exit 1
             fi
@@ -207,6 +246,16 @@ do
             fi
             consumeParamCount=1
         ;;
+        # xml parameter
+        --xmlTemplate=*)
+            xmlTemplate="${1#*=}"
+            consumeParamCount=1
+        ;;
+        --xmlAppendTo=*)
+            xmlAppendTo="${1#*=}"
+            consumeParamCount=1
+        ;;
+        # other
         --help)
             usage
             exit 0
@@ -225,31 +274,40 @@ do
     shift $consumeParamCount
 done
 
+# 2. check parameters
 if [ -z $confPath ]; then
     echoerr "env2vonf.sh error: -c/--conf is empty"
     exit 1
 fi
 
-if [ -z $evnStart ]; then
-    echoerr "env2vonf.sh error: -e/--evnStart is empty"
+if [ -z $envPrefix ]; then
+    echoerr "env2vonf.sh error: -e/--envPrefix is empty"
     exit 1
 fi
 
 type=${type:-txt}
-if [ $type != "txt" -a $type != 'xml' ]; then
+if [ "$type" != "txt" -a "$type" != "xml" ]; then
     echoerr "env2vonf.sh error: type = $type. type must be txt or xml"
+    exit 1
+fi
+
+if [ "$type" = "xml" -a -z "$xmlTemplate" ]; then
+    echoerr "env2vonf.sh error: when type is xml. --xmlTemplate must be set"
+    exit 1
+fi
+
+if [ "$type" = "xml" -a -z "$xmlAppendTo" ]; then
+    echoerr "env2vonf.sh error: when type is xml. --xmlAppendTo must be set"
     exit 1
 fi
 
 kvDelimiter=${kvDelimiter:-=}
 
-# check confPath
-if [ ! -f $confPath ];then
+# 3. check confPath
+if [ ! -f "$confPath" ];then
     touch $confPath
     echo "env2vonf.sh info: can't find $confPath, touched"
 fi
 
-# env to conf
-if [ $type = "txt" ];then
-    writeTxtConf
-fi
+# 4. evn to config
+envToConf
