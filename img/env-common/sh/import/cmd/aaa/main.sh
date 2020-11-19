@@ -1,1 +1,0 @@
-echo 'this is cmd/aaa/main.sh'

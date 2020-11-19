@@ -13,5 +13,5 @@ ADD sh/createSSHConnect.sh /usr/bin/createSSHConnect.sh
 
 # 添加 main.sh，并设置个shell的可执行权限
 RUN chmod a+x $DOCKERENV_ENTRYPOINT/ssh/main.sh \
-    && echo 'ssh' >> $DOCKERENV_ENTRYPOINT/include \
-    && chmod a+x /usr/bin/createSSHConnect.sh
+    && echo 'ssh' >> $ENTRYPOINT_INCLUDE
+    # && chmod a+x /usr/bin/createSSHConnect.sh
