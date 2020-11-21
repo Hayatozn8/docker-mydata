@@ -138,7 +138,7 @@ function xmlPropertyWrite(){
     sed -i "/<\/${xmlAppendTo}>/ s/.*/${entry}\n&/" $confPath
 }
 ###################### main ######################
-# 1. extract parameters
+# 1. get option
 type=""
 envPrefix=""
 confPath=""
@@ -274,7 +274,7 @@ do
     shift $consumeParamCount
 done
 
-# 2. check parameters
+# 2. check options
 if [ -z $confPath ]; then
     echoerr "env2vonf.sh error: -c/--conf is empty"
     exit 1
