@@ -58,24 +58,25 @@ function buildImage(){
     echo '!add' >> "$WORK_DIR/.dockerignore"
     echo '!DockerFile' >> "$WORK_DIR/.dockerignore"
 
-    # linux
-    # envs=( $(sed -nE 's/^\s+ENV\s+(.*)/\1/ip' "$WORK_DIR/Dockerfile") )
-    # ignores=( $(sed -nE 's/^\s=(ADD|COPY)\s+(.*)\s+.*/\2/ip' "$WORK_DIR/Dockerfile") )
-    # macos
     # 抽取所有 ENV
-    envs=( $(grep -iE "^\s*ENV" "$WORK_DIR/Dockerfile"| awk '{print $2, $3}') )
-    # 抽取所有 ADD、COPY 指令中的本地目录（第一个参数）
-    ignores=( $(grep -iE "^\s*(COPY|ADD)" "$WORK_DIR/Dockerfile"| awk '{print $2}') )
-    
+    envs=( $( awk -F'[ =]+' --posix '/^ *ENV/{
+        if ($1==""){
+            key=$3; value=$4;
+        } else {
+            key=$2; value=$3;
+        } 
+        if (toupper(key) == "PATH"){next}
+
+        printf "%s=%s\n", key, value;
+    }' "$WORK_DIR/Dockerfile") )
+
     # 通过 eval 将 所有 ENV 转换为当前shell中的变量
-    for (( i=0; i<${#envs[@]}; i++));do
-        # skip $PATH
-        if [ "${envs[$i]}" != "PATH" -a "${envs[$i]}" != "path" ];then
-            eval ${envs[$i]}='"${envs[$i+1]}"'
-        fi
-        i=$[$i+1]
+    for env in ${envs[@]};do
+        eval "$env"
     done
 
+    # 抽取所有 ADD、COPY 指令中的本地目录（第一个参数）
+    ignores=( $(grep -iE "^\s*(COPY|ADD)" "$WORK_DIR/Dockerfile"| awk  -F'[ =]+' '{if ($1==""){print $3} else {print $2}}' ))
     # 通过 eval 转换 $ignoreName 中在当前shell内可能存在的环境变量
     for ignoreName in ${ignores[@]}; do
         eval "echo !$ignoreName" >> "$WORK_DIR/.dockerignore"
