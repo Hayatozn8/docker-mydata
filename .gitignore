@@ -1,6 +1,9 @@
 .DS_Store
-**/*.tar
-**/*.tar.gz
-**/*.tgz
 others/
 *.numbers
+
+resource/*
+!resource/.gitkeep
+# **/*.tar
+# **/*.tar.gz
+# **/*.tgz
