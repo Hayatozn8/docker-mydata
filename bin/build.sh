@@ -44,18 +44,18 @@ function buildImage(){
     fi
 
 
-    if [ -d "$IMG_DIR/$imgID/entrypoint" ];then
-        cp -r "$IMG_DIR/$imgID/entrypoint" "$WORK_DIR"
+    if [ -d "$IMG_DIR/$imgID/src" ];then
+        cp -r "$IMG_DIR/$imgID/src" "$WORK_DIR"
     fi
 
-    if [ -d "$IMG_DIR/$imgID/add" ];then
-        cp -r "$IMG_DIR/$imgID/add" "$WORK_DIR"
-    fi
+    # if [ -d "$IMG_DIR/$imgID/add" ];then
+    #     cp -r "$IMG_DIR/$imgID/add" "$WORK_DIR"
+    # fi
 
     # 2. 解析 Dockerfile，并生成 .dockerignore
     echo '*' > "$WORK_DIR/.dockerignore"
-    echo '!entrypoint' >> "$WORK_DIR/.dockerignore"
-    echo '!add' >> "$WORK_DIR/.dockerignore"
+    # echo '!entrypoint' >> "$WORK_DIR/.dockerignore"
+    echo '!src' >> "$WORK_DIR/.dockerignore"
     echo '!DockerFile' >> "$WORK_DIR/.dockerignore"
 
     # 抽取所有 ENV
