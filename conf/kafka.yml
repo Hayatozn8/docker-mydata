@@ -1,0 +1,9 @@
+- id: kafka-base
+  build-arg:
+    pkg: kafka_2.11-0.11.0.0.tgz
+- id: kafka-eagle-node
+- id: kafka-eagle-webui
+  build-arg:
+    pkg: kafka-eagle-bin-1.4.8.tar.gz
+    ke_ui_version: kafka-eagle-bin-1.4.8
+    sub_pkg: kafka-eagle-web-1.4.8-bin.tar.gz
