@@ -1,10 +1,7 @@
 FROM env-common
 
-ADD jdk-8u144-linux-x64.tar.gz /opt/module/
-ENV JAVA_HOME /opt/module/jdk1.8.0_144
+ARG pkg
+ARG jdk_version
+ADD ${pkg} /opt/module/
+ENV JAVA_HOME /opt/module/${jdk_version}
 ENV PATH $PATH:$JAVA_HOME/bin
-# ARG JDK_LOCAL_PATH
-# ARG JDK_DIR_NAME
-# ADD $JDK_LOCAL_PATH /opt/module/
-# ENV JAVA_HOME /opt/module/JDK_DIR_NAME
-# ENV PATH $PATH:$JAVA_HOME/bin

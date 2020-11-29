@@ -1,0 +1,9 @@
+- id: env-common
+- id: env-jdk8
+  build-arg: 
+    pkg: jdk-8u144-linux-x64.tar.gz
+    jdk_version: jdk1.8.0_144
+- id: env-ssh
+- id: env-zknode
+  build-arg:
+    pkg: zookeeper-3.4.14.tar.gz
