@@ -26,4 +26,4 @@ if [ -z $yamlPath ]; then
     # yamlPath=$CMD_ROOT/$yamlPath
 fi
 
-$CMD_ROOT/tool/docker-yamlbuild-mac -y $yamlPath --img-dir $IMG_DIR --build-dir $BUILD_DIR
+$CMD_ROOT/tool/docker-yamlbuild -y ${yamlPath} --img-dir ${IMG_DIR} --build-dir ${BUILD_DIR}

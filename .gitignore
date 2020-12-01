@@ -4,6 +4,9 @@ others/
 
 resource/*
 !resource/.gitkeep
+
+tool/docker-yamlbuild
+
 # **/*.tar
 # **/*.tar.gz
 # **/*.tgz
