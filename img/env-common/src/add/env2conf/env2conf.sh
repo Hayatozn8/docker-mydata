@@ -78,18 +78,27 @@ function isInclude(){
 
 function envToConf(){
     # 获取环境变量中以 $envPrefix 参数开头的所有变量
-    envNameList=($(env | grep -E "^${envPrefix}_.*${kvDelimiter}" | cut -d "=" -f 1))
+    envKVList=($(env | grep -E "^${envPrefix}_.*="))
+    # envNameList=($(env | grep -E "^${envPrefix}_.*=" | cut -d "=" -f 1))
 
     # 向指定的配置文件中写入一个换行
     # 防止配置文件不是以换行结尾时，导致的配置写入异常
-    if [ ${#envNameList[@]} != 0 ];then
+    if [ ${#envKVList[@]} != 0 ];then
         echo -e "\n" >> $confPath
     fi
 
     # 迭代环境变量，并写入 $confPath 指定的配置文件
-    for envName in ${envNameList[@]}; do
-        # KAFKA_LOG_DIRS=/opt ---> LOG_DIRS ---> log_dirs ---> log.dirs
-        confKey=$(echo ${envName#$envPrefix\_} | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
+    for envKV in ${envKVList[@]}; do
+        # KAFKA_LOG_DIRS=/opt ---> KAFKA_LOG_DIRS
+        envkey="${envKV%%=*}"
+        confKey="${envkey#$envPrefix\_}"
+
+        # 如果包含 . 则不进行小写转换
+        # 如果全部都是由 _ 分割，则转换为小写
+        if [[ ! $confKey =~ "." ]];then
+            # KAFKA_LOG_DIRS ---> LOG_DIRS ---> log_dirs ---> log.dirs
+            confKey=$(echo ${confKey} | sed 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/' | sed 's/_/./g')
+        fi
 
         # 检查是否需要将当前key写入配置
         if [ $(isInclude $confKey) = 'n' ]; then
@@ -97,7 +106,7 @@ function envToConf(){
         fi
 
         # log_dirs=/opt ---> /opt
-        confValue=${!envName}
+        confValue="${envKV#*=}"
 
         # env to conf
         eval "${type}PropertyWrite" '"$confKey"' '"$confValue"'

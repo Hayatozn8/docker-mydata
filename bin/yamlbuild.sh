@@ -2,6 +2,10 @@ CMD_ROOT="$(cd `dirname $0`;pwd)/.."
 BUILD_DIR="$CMD_ROOT/resource"
 IMG_DIR="$CMD_ROOT/img"
 
+function echoerr() {
+    echo "$@" 1>&2
+}
+
 yamlPath=""
 while [ $# -gt 0 ]
 do
@@ -9,7 +13,7 @@ do
         -y)
             yamlPath="$2"
             if [ -z $yamlPath ]; then
-                echoerr "build.sh error: -f is empty"
+                echoerr "build.sh error: -y is empty"
                 exit 1
             fi
             break

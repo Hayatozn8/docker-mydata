@@ -1,0 +1,142 @@
+version: '3'
+services:
+  zk01:
+    image: env-zknode
+    container_name: zk01
+    hostname: zk01
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.1
+  zk02:
+    image: env-zknode
+    container_name: zk02
+    hostname: zk02
+    ports:
+      - "2182:2181"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.2
+  zk03:
+    image: env-zknode
+    container_name: zk03
+    hostname: zk03
+    ports:
+      - "2183:2181"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.3
+  ka01:
+    image: kafka-base
+    container_name: ka01
+    hostname: ka01
+    depends_on:
+      - zk01
+      - zk02
+      - zk03
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LISTENERS: "PLAINTEXT://ka01:9092"
+      KAFKA_LOG_DIRS: "/opt/module/kafka/data"
+      KAFKA_ZOOKEEPER_CONNECT: "zk01:2181,zk02:2181,zk03:2181"
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.4
+  ka02:
+    image: kafka-base
+    container_name: ka02
+    hostname: ka02
+    depends_on:
+      - zk01
+      - zk02
+      - zk03
+    ports:
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LISTENERS: "PLAINTEXT://ka02:9093"
+      KAFKA_LOG_DIRS: "/opt/module/kafka/data"
+      KAFKA_ZOOKEEPER_CONNECT: "zk01:2181,zk02:2181,zk03:2181"
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.5
+  ka03:
+    image: kafka-base
+    container_name: ka03
+    hostname: ka03
+    depends_on:
+      - zk01
+      - zk02
+      - zk03
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+      KAFKA_LISTENERS: "PLAINTEXT://ka03:9094"
+      KAFKA_LOG_DIRS: "/opt/module/kafka/data"
+      KAFKA_ZOOKEEPER_CONNECT: "zk01:2181,zk02:2181,zk03:2181"
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.6
+  fl01:
+    image: flume-base
+    container_name: fl01
+    hostname: fl01
+    depends_on:
+      - zk01
+      - zk02
+      - zk03
+      - ka01
+      - ka02
+      - ka03
+    ports:
+      - "44444:44444"
+    environment:
+      FLUME_a1.sources: r1
+      FLUME_a1.sinks: k1
+      FLUME_a1.channels: c1
+      FLUME_a1.sources.r1.type: netcat
+      FLUME_a1.sources.r1.bind: localhost
+      FLUME_a1.sources.r1.port: 44444
+      FLUME_a1.sinks.k1.type: org.apache.flume.sink.kafka.KafkaSink
+      FLUME_a1.sinks.k1.kafka.topic: flumekafka
+      FLUME_a1.sinks.k1.kafka.bootstrap.servers: ka01:9092,ka02:9093,ka03:9094
+      FLUME_a1.sinks.k1.kafka.flumeBatchSize: 20
+      FLUME_a1.sinks.k1.kafka.producer.acks: 1
+      FLUME_a1.channels.c1.type: memory
+      FLUME_a1.channels.c1.capacity: 1000
+      FLUME_a1.channels.c1.transactionCapacity: 100
+      FLUME_a1.sources.r1.channels: c1
+      FLUME_a1.sinks.k1.channel: c1
+    networks:
+      datanet: 
+        ipv4_address: 172.24.102.7
+
+networks:
+  datanet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+        # - gateway: 172.24.0.1
