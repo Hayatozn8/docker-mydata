@@ -7,3 +7,6 @@
 - id: env-zknode
   build-arg:
     pkg: zookeeper-3.4.14.tar.gz
+- id: env-hanode
+  build-arg:
+    pkg: hadoop-2.10.1.tar.gz

@@ -10,10 +10,10 @@ yamlPath=""
 while [ $# -gt 0 ]
 do
     case "$1" in
-        -y)
+        -f)
             yamlPath="$2"
             if [ -z $yamlPath ]; then
-                echoerr "build.sh error: -y is empty"
+                echoerr "build.sh error: -f is empty"
                 exit 1
             fi
             break

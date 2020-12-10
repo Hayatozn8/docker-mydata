@@ -1,8 +1,28 @@
 #!/bin/bash
 echo "--------------hanode-------------------"
 
-# 缓存已经被写入过的 ssh 用户: user@hostname
-registeredSSHUserHosts=()
+# 写入配置
+echo "write core-site.xml"
+env2conf.sh -e HA_CORE -t xml -c $HADOOP_HOME/etc/hadoop/core-site.xml \
+            --xmlTemplate='<property><name>@key@</name><value>@value@</value></property>' \
+            --xmlAppendTo=configuration
+
+echo "write hdfs-site.xml"
+env2conf.sh -e HA_HDFS -t xml -c $HADOOP_HOME/etc/hadoop/hdfs-site.xml \
+            --xmlTemplate='<property><name>@key@</name><value>@value@</value></property>' \
+            --xmlAppendTo=configuration
+
+echo "write yarn-site.xml"
+env2conf.sh -e HA_YARN -t xml -c $HADOOP_HOME/etc/hadoop/yarn-site.xml \
+            --xmlTemplate='<property><name>@key@</name><value>@value@</value></property>' \
+            --xmlAppendTo=configuration
+
+echo "write mapred-site.xml"
+cp $HADOOP_HOME/etc/hadoop/mapred-site.xml.template $HADOOP_HOME/etc/hadoop/mapred-site.xml
+env2conf.sh -e HA_MR -t xml -c $HADOOP_HOME/etc/hadoop/mapred-site.xml \
+            --xmlTemplate='<property><name>@key@</name><value>@value@</value></property>' \
+            --xmlAppendTo=configuration
+
 
 # 检查是不是 ha 环境
 # 多个 nn 返回 y
@@ -25,7 +45,7 @@ function isHaEnv()
 function tryRegisterHost()
 {
     # 如果从未写入过 /etc/hosts，则写入
-    if [ -z  $(grep -E "$1\s+$2$" /etc/hosts) ]; then
+    if [ -z  $(grep "$1\s+$2$" /etc/hosts) ]; then
         echo "$1 $2" >> /etc/hosts
     fi
 }
@@ -37,9 +57,11 @@ function tryCreateSSHConnect()
 {
     sshTarget="$1@$2"
     # 尝试进行 ssh 连接，并且失败时不重试
+    # 失败时会输出异常 Host key verification failed.
     ssh -o NumberOfPasswordPrompts=0 $sshTarget "pwd"
     # 如果无法通过 ssh 进行连接，则创建连接
     if [ $? != 0 ]; then
+        echo "can't connect $sshTarget, try to create connection"
         createSSHConnect.sh $sshTarget
     fi
 }
@@ -161,6 +183,7 @@ function tryStartMainJN()
 # 初始化 JN 结点
 function initJN()
 {
+    echo "...init JN..."
     # 与自身建立 ssh 连接
     sshConnectSelf
     # 与所有 slave 建立连接
@@ -172,6 +195,7 @@ function initJN()
 #  启动 JN 结点
 function startJN()
 {
+    echo "...start JN..."
     # 1. 需要设置 ZOO_MY_ID，zk集群将会自动启动
     # 2. 如果是main jn，即第一个 jn，则尝试启动整个 ha 集群
     tryStartMainJN
@@ -180,6 +204,7 @@ function startJN()
 #  启动 RM 结点
 function startRM()
 {
+    echo "...start RM..."
     # 创建日志目录
     mkdir $HADOOP_HOME/logs
     # 启动 yarn
@@ -192,6 +217,7 @@ function startRM()
 # 初始化 NN 结点
 function initNN()
 {
+    echo "...init NN..."
     # 与自身建立 ssh 连接
     sshConnectSelf
     # 与所有 slave 建立连接
@@ -203,6 +229,7 @@ function initNN()
 # 启动 NN
 function startNN()
 {
+    echo "...start NN..."
     # 初始化 NN
     hdfs namenode -format
     # 启动hdfs
@@ -212,6 +239,8 @@ function startNN()
 # ssh 连接 nn
 function sshConnectNN()
 {
+    echo "...connect NN by ssh..."
+
     nHost=$NN
     eval nnip='$'$nHost
     # 尝试将 self 的地址写入host
@@ -223,21 +252,24 @@ function sshConnectNN()
 
 function trySSHConnectNN2()
 {
-    nn2Host=$NN2
-    if [ -n $nn2Host ]; then
-        eval nn2ip='$'$nn2Host
+    echo "...connect NN2 by ssh..."
+    
+    if [ ! -z $NN2 ]; then
+        eval nn2ip='$'$NN2
 
         # 尝试将 self 的地址写入host
-        tryRegisterHost $nn2ip $nn2Host
+        tryRegisterHost $nn2ip $NN2
 
         # 尝试建立 ssh 连接
-        tryRegisterSSHUserHost $nn2Host "root"
+        tryRegisterSSHUserHost $NN2 "root"
     fi
 }
 
 # 初始化 NN2
 function initNN2()
 {
+    echo "...init NN2..."
+
     # 与自身建立 ssh 连接
     sshConnectSelf
     # 与 NN 建立连接
@@ -247,10 +279,25 @@ function initNN2()
 # 初始化 RM
 function initRM()
 {
+    echo "...init RM..."
+
     # 与自身建立 ssh 连接
     sshConnectSelf
     # 与所有 slave 建立连接
     sshConnectSlaves
+}
+
+function writeSlaves()
+{
+    echo 'write etc/hadoop/slaves'
+    # 获取所有 slaves 的 id
+    local slaves=$SLAVES
+    slaves=(${slaves//,/ })
+
+    >$HADOOP_HOME/etc/hadoop/slaves
+    for slaveName in ${slaves[@]};do
+        echo $slaveName >> $HADOOP_HOME/etc/hadoop/slaves
+    done
 }
 
 # ----------------- main() ------------------
@@ -258,6 +305,9 @@ function initRM()
 currentHost=$(hostname)
 # 2. 如果是NN
 if [ $(isNNNode $currentHost) = 'y' ]; then
+    # 写入 slaves 文件
+    writeSlaves
+
     if [ $(isHaEnv) = 'y' ]; then
         # ha 环境配置
         initJN
@@ -275,6 +325,9 @@ fi
 
 # 4. 如果是 RM，初始化并启动
 if [ "$currentHost" = "$RM" ]; then
+    # 写入 slaves 文件
+    writeSlaves
+    
     initRM
     startRM
 fi
