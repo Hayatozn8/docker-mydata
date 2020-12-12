@@ -18,9 +18,9 @@ if [ -d "$IMG_DIR/$imgID" ];then
 fi
 
 # 创建:entrypoint/, entrypoint/main.sh, add/
-mkdir -p "$IMG_DIR/$imgID/entrypoint"
-echo '#!/bin/bash' > "$IMG_DIR/$imgID/entrypoint/main.sh"
-mkdir -p "$IMG_DIR/$imgID/add"
+mkdir -p "$IMG_DIR/$imgID/src/entrypoint"
+echo '#!/bin/bash' > "$IMG_DIR/$imgID/src/entrypoint/main.sh"
+mkdir -p "$IMG_DIR/$imgID/src/add"
 
 # 创建 Dockerfile，将基本内容写入 Dockerfile
 touch "$IMG_DIR/$imgID/Dockerfile"
@@ -28,12 +28,13 @@ cat>"$IMG_DIR/$imgID/Dockerfile"<<EOF
 FROM <base-imgID>
 
 # TODO
-ADD entrypoint/main.sh $DOCKERENV_ENTRYPOINT/${imgID}/main.sh
+ARG pkg
+ADD \${pkg} /opt/module/
 
 # TODO
-ADD <package> /opt/module/
+ADD src/entrypoint/main.sh \$DOCKERENV_ENTRYPOINT/${imgID}/main.sh
 
 # TODO
-RUN chmod a+x $DOCKERENV_ENTRYPOINT/${imgID}/main.sh \\
+RUN chmod a+x \$DOCKERENV_ENTRYPOINT/${imgID}/main.sh \\
  && echo "${imgID}" >> \$ENTRYPOINT_INCLUDE
 EOF
