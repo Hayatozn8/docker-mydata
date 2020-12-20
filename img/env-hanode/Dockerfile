@@ -11,10 +11,10 @@ ADD src/entrypoint/main.sh $DOCKERENV_ENTRYPOINT/hanode/main.sh
 RUN mv /opt/module/hadoop* /opt/module/hadoop \
     && chmod a+x $DOCKERENV_ENTRYPOINT/hanode/main.sh \
     && echo 'hanode' >> $DOCKERENV_ENTRYPOINT/include \
-    && echo "export JAVA_HOME=${JAVA_HOME}" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh \
-    && ln -s $HADOOP_HOME/etc/hadoop /hdetc
+    && echo "export JAVA_HOME=${JAVA_HOME}" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+    # && ln -s $HADOOP_HOME/etc/hadoop /hdetc
 
-VOLUME /hdetc
+# VOLUME /opt/module/hadoop/etc/hadoop
 
 # HA_CORE
 # HA_HDFS
