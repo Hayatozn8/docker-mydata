@@ -20,3 +20,8 @@ do
     # 通过HostName从环境变量中获取对应的IP
     echo "$regionserver" >> $HBASE_HOME/conf/regionservers
 done
+
+# 启动HBase集群
+if [ "$HB_MASTER" = 'true' ];then
+    start-hbase.sh
+fi

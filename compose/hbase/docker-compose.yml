@@ -50,6 +50,8 @@ services:
     ports:
       - 50070:50070
       - 16010:16010
+    environment:
+      HB_MASTER: 'true'
     env_file:
       - hd.env
       - hbase.env
