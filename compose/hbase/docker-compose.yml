@@ -52,6 +52,28 @@ services:
       - 16010:16010
     environment:
       HB_MASTER: 'true'
+      HB_BACKUP_MASTERS: hmaster02
+    env_file:
+      - hd.env
+      - hbase.env
+    depends_on:
+      - hmaster02
+      - dn01
+      - dn02
+      - dn03
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.1
+
+  # hbase 高可用结点
+  hmaster02:
+    image: hbase
+    container_name: hmaster02
+    hostname: hmaster02
+    ports:
+      - 16020:16010
+    environment:
+      HB_BACKUP_MASTERS: hmaster02
     env_file:
       - hd.env
       - hbase.env
@@ -61,7 +83,7 @@ services:
       - dn03
     networks:
       datanet: 
-        ipv4_address: 172.23.101.1
+        ipv4_address: 172.23.101.2
 
   dn01:
     image: hbase
