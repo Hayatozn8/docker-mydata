@@ -1,0 +1,40 @@
+version: '3'
+services:
+  azkaban-server:
+    image: azkaban-server
+    container_name: azkaban-server
+    hostname: azkaban-server
+    ports:
+      - "8443:8443"
+    env_file:
+      - azkaban.env
+    volumes:
+      - ./keystore:/opt/module/azkaban/keystore 
+    depends_on: 
+      - azkaban-db
+    networks:
+      azkabannet: 
+        ipv4_address: 172.24.101.1
+
+  azkaban-db:
+    image: azkaban-db
+    container_name: azkaban-db
+    hostname: azkaban-db
+    environment:
+      MYSQL_DATABASE: azkaban-db
+      MYSQL_USER: azkaban-db
+      MYSQL_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - "3336:3306"
+    networks:
+      azkabannet: 
+        ipv4_address: 172.24.101.2
+
+networks:
+  azkabannet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.24.0.0/16
+        # - gateway: 172.23.0.1
