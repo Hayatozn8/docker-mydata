@@ -1,0 +1,200 @@
+version: '3'
+services:
+  zk01:
+    image: env-zknode
+    container_name: zk01
+    hostname: zk01
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888  
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.201
+  zk02:
+    image: env-zknode
+    container_name: zk02
+    hostname: zk02
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
+    ports:
+      - "2182:2181"
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.202
+  zk03:
+    image: env-zknode
+    container_name: zk03
+    hostname: zk03
+    ports:
+      - "2183:2181"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVER_1: zk01:2888:3888
+      ZOO_SERVER_2: zk02:2888:3888
+      ZOO_SERVER_3: zk03:2888:3888
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.203
+
+  nn01:
+    image: hbase
+    container_name: nn01
+    hostname: nn01
+    ports:
+      - 50070:50070
+      - 16010:16010
+    environment:
+      HB_MASTER: 'true'
+      HB_BACKUP_MASTERS: hmaster02
+    env_file:
+      - hd.env
+      - hbase.env
+    depends_on:
+      - hmaster02
+      - dn01
+      - dn02
+      - dn03
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.1
+
+  # hbase 高可用结点
+  hmaster02:
+    image: hbase
+    container_name: hmaster02
+    hostname: hmaster02
+    ports:
+      - 16020:16010
+    environment:
+      HB_BACKUP_MASTERS: hmaster02
+    env_file:
+      - hd.env
+      - hbase.env
+    depends_on:
+      - dn01
+      - dn02
+      - dn03
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.2
+
+  rm01:
+    image: env-hanode
+    container_name: rm01
+    hostname: rm01
+    ports:
+      - 8088:8088
+      - 19888:19888
+    env_file:
+      - hd.env
+    depends_on:
+      - dn01
+      - dn02
+      - dn03
+      - nn01
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.21
+
+  dn01:
+    image: hbase
+    container_name: dn01
+    hostname: dn01
+    # ports:
+    #   - 8042:8042
+    env_file:
+      - hd.env
+      - hbase.env
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.101
+
+  dn02:
+    image: hbase
+    container_name: dn02
+    hostname: dn02
+    # ports:
+    #   - 8042:8042
+    env_file:
+      - hd.env
+      - hbase.env
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.102
+
+  dn03:
+    image: hbase
+    container_name: dn03
+    hostname: dn03
+    ports:
+      - 50090:50090
+    #   - 8042:8042
+    env_file:
+      - hd.env
+      - hbase.env
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.103
+  # hive对接hbase
+  # azkaban
+  azkaban-server-hbase-hive:
+    image: azkaban-server
+    container_name: azkaban-server-hbase-hive
+    hostname: azkaban-server-hbase-hive
+    ports:
+      - "8443:8443"
+    env_file:
+      - azkaban.env
+      - hd.env
+      - hbase.env
+      - hive.env
+    volumes:
+      - ./keystore:/opt/module/azkaban/keystore 
+    depends_on:
+      - hive-mysql
+      - azkaban-db
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.211
+        
+  hive-mysql:
+    image: mysql
+    container_name: hive-mysql
+    hostname: hive-mysql
+    ports:
+      - "3333:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.212
+
+  azkaban-db:
+    image: azkaban-db
+    container_name: azkaban-db
+    hostname: azkaban-db
+    environment:
+      MYSQL_DATABASE: azkaban-db
+      MYSQL_USER: azkaban-db
+      MYSQL_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - "3336:3306"
+    networks:
+      datanet: 
+        ipv4_address: 172.23.101.213
+
+networks:
+  datanet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/16
+        # - gateway: 172.23.0.1
